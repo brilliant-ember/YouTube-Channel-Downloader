@@ -25,9 +25,10 @@ Channel url must be in on of these forms
 Make sure there's no '/featured' or '/vidoes' or '/' anything at the end of the link
 
 Examples of valid channel urls
-https://www.youtube.com/channel/UCVryWqJ4cSlbTSETBHpBUWw
-https://www.youtube.com/c/iforce2d/
-https://www.youtube.com/user/FireSymphoney
+
+- https://www.youtube.com/user/FireSymphoney
+- https://www.youtube.com/channel/UCVryWqJ4cSlbTSETBHpBUWw
+- https://www.youtube.com/c/iforce2d/
 
 
 ## Notes
