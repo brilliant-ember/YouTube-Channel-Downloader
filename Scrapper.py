@@ -2,19 +2,23 @@
 
 #pytube and selenium implementation
 
+from enum import unique
+import traceback
 from selenium import webdriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from Logger import Log
 import time
 import pdb
 
 
 class ChannelScrapper():
-	def __init__(self, channel_url: str, headless = True, default_wait = 3):
+	def __init__(self, channel_url: str, logger:Log, headless = True, default_wait = 1):
 		self.default_wait = default_wait
+		self.scroll_wait = default_wait/2
 		if not headless:
 			self.driver = webdriver.Firefox() 
 		else:
@@ -23,13 +27,22 @@ class ChannelScrapper():
 			self.driver = webdriver.Firefox(options=options)
 			
 		self.channel_url = channel_url
+		self.logger = logger
 
 		self.initial_scroll_height = 0 # initial scroll height
-		self.current_scroll_height = 0 
+		self.current_scroll_height = 0
+
 
 	def __del__(self):
 		self.driver.quit()
-
+	
+	def log(self, msg:str, level="info")-> None:
+		msg = "Scrapper_Log - " + msg
+		self.logger.log(msg, level=level)
+	
+	def get(self, url:str) -> None:
+		self.current_scroll_height = 0
+		self.driver.get(url)
 
 	def wait_for_page_load(self, name:str, type="class_name"):
 		by = By.CLASS_NAME
@@ -65,12 +78,12 @@ class ChannelScrapper():
 		}
 		'''
 		playlist_class_name = 'ytd-grid-playlist-renderer'
-		self.driver.get(channel_playlists_url)
+		self.get(channel_playlists_url)
 		self.wait_for_page_load(playlist_class_name)
 		elems = self.driver.find_elements_by_class_name(playlist_class_name)
 		num_playlists = 0
 		playlists_info = {}
-		for playlist_counter in range(0, len(elems),6): # every 6 elements there is a new playlist (could change in the future)
+		for playlist_counter in range(0, len(elems), 6): # every 6 elements there is a new playlist (could change in the future)
 			num_videos = elems[playlist_counter].text
 			title = elems[playlist_counter +1].text
 			link =elems[playlist_counter +5].find_element_by_tag_name('a').get_attribute('href')
@@ -78,11 +91,11 @@ class ChannelScrapper():
 			num_playlists += 1
 
 		for playlistName in playlists_info.keys():
+			# pdb.set_trace()
 			playlist = playlists_info[playlistName]
 			url = playlist["url"]
 			_, vids = self.get_video_info_from_playlist(url)
 			playlist["videos"] = vids
-
 
 		playlists_info['num_playlists'] = num_playlists
 
@@ -91,7 +104,7 @@ class ChannelScrapper():
 	def get_all_uploads_playlist_url(self, videos_tab_link:str)->str:
 		''' takes the link that you get after you press videos in the channel tab, example link input
 		https://www.youtube.com/user/FireSymphoney/videos'''
-		self.driver.get(videos_tab_link)
+		self.get(videos_tab_link)
 		self.wait_for_page_load('play-all', "id")
 		elem = self.driver.find_element_by_id('play-all').find_element_by_class_name('yt-simple-endpoint')
 		all_uploads_url = elem.get_attribute('href')
@@ -102,7 +115,7 @@ class ChannelScrapper():
 	def get_video_info_from_playlist(self, playlist_url):
 		'''takes playlist url, returns the number of videos in that playlist and an object {"video1Title": "video1url", video2:url ... and so on}
 		example playlist url https://www.youtube.com/playlist?list=UU6mIxFTvXkWQVEHPsEdflzQ'''
-		self.driver.get(playlist_url)
+		self.get(playlist_url)
 		containers_tag = 'ytd-playlist-video-renderer'
 		self.wait_for_page_load(containers_tag)
 		try:
@@ -114,30 +127,58 @@ class ChannelScrapper():
 			xpath = '/html/body/ytd-app/div/ytd-page-manager/ytd-browse/ytd-playlist-sidebar-renderer/div/ytd-playlist-sidebar-primary-info-renderer/div[1]/yt-formatted-string[1]'
 			num_videos = self.driver.find_element_by_xpath(xpath).text
 			num_videos = int(num_videos.split(' ')[0])
-		first_load_vids = self.driver.find_elements_by_tag_name(containers_tag)
-		# this only shows the first 100 videos or so, you need to keep scrolling down to load the rest
-		# first_load_vids = driver.find_elements_by_tag_name(containers_tag)
+		except Exception as e:
+			traceback.print_exc()
+		
 		i = 0
-		vids = {}
-		while i < num_videos:
-			videos_batch = self.driver.find_elements_by_tag_name(containers_tag)
+		vids = {} # this is the videos we keep from scrapping
+		infinite_loop_saftey = 10 #if we go through the program this many times without changes to the main list we will shut the while loop down
+		useless_loops_counter = 0 # to protect us against the infinite while loops that are possible in case i never increments above a certain thing
+		all_videos_links_with_duplicates = []
+		all_videos_titles_with_duplicates = []
+		while i  < num_videos:
+			# this only shows the first 100 videos or so, you need to keep scrolling down to load the rest
+			videos_batch = self.driver.find_elements_by_tag_name(containers_tag) # this updates everytime we scroll down
 			for video_container in videos_batch:
-				# links = video_container.find_elements_by_tag_name("a")
 				video = video_container.find_elements_by_id('video-title')[0]
 				link = video.get_attribute('href')
+				all_videos_links_with_duplicates.append(link)
 				title = video.get_attribute('title')
-				if not(title in vids.keys()):
+				all_videos_titles_with_duplicates.append(title)
+				
+				# catches videos we dont have
+				if not (title in vids.keys()):
 					vids[title] = link
 					i += 1
-					# print(i)
+					useless_loops_counter = 0
+
+				# catches videos that we dont have if they have the same name as a video we already have
+				elif vids[title] != link:
+					# we have a duplicate name but the video url they point is different
+					duplicate_title = title + "_" +str(i) # the link is different so we add the video but we change the name a bit
+					vids[duplicate_title]=link
+					i += 1
+					useless_loops_counter = 0
+				
+			useless_loops_counter +=1
+			if useless_loops_counter >= infinite_loop_saftey:
+				obtained_videos_num = len(vids.keys())
+				self.log(f'couldnt get all videos from the playlist as some videos are hidden or something, got {obtained_videos_num}/{num_videos} for playlist {playlist_url}', level="warn")
+				break_while_loop = True
+				break
+
 			self.scroll_down()
-			time.sleep(1)
-		if(num_videos != len(vids.keys())):
-			print("Error did not fetch all videos")
-		return num_videos, vids
+			time.sleep(self.scroll_wait)
+		
+		num_videos_real = len(vids.keys()) # we want the true number of videos without the hidden videos
+		x = min(abs(num_videos_real - num_videos), 10)
+		if(x >= 10):
+			self.log(f"Warning, this playlist has many videos not availabe for download {playlist_url}")
+
+		return num_videos_real, vids
 
 	def get_channel_about(self, playlist_about_url:str)->dict:
-		self.driver.get(playlist_about_url)
+		self.get(playlist_about_url)
 		desc_id = 'description'
 		self.wait_for_page_load(desc_id, type='id')
 		about_page = self.driver # alias
@@ -172,8 +213,6 @@ class ChannelScrapper():
 			"links": links,
 			"stats":stats_text
 		}
-
-
 
 	def scroll_down(self, scroll_offset = 700):
 		"""A method for scrolling the page."""

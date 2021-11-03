@@ -21,6 +21,7 @@ playlist: the video playlist whose url we passed
 '''
 
 from genericpath import exists
+import pdb
 from pytube import YouTube
 from pytube.extract import publish_date
 from pytube.request import head
@@ -39,7 +40,6 @@ class Downloader():
 	def __init__(self, channel_url, max_update_lag = 0, browser_wait = 3) -> None:
 
 	    signal(SIGINT, self.graceful_exit)
-	    self.scrapper = ChannelScrapper(channel_url, headless=False, default_wait=browser_wait)
 	    self.all_uploads_url = channel_url + "/videos" # example https://www.youtube.com/user/FireSymphoney/videos
 	    self.playlists_url = channel_url + "/playlists" # https://www.youtube.com/user/FireSymphoney/playlists
 	    self.about_url = channel_url + "/about"
@@ -52,6 +52,7 @@ class Downloader():
 	    self.init_dir()
 	    log_file_path = os.path.join(self.root_dir, "logfile.txt")
 	    self.logger = Log(log_file_path)
+	    self.scrapper = ChannelScrapper(channel_url, self.logger, headless=False, default_wait=browser_wait)
 	    self.log = self.logger.log #make an alias to the Log.log() function so I don't have to type it all the time
 	    self.log(f'-------- Bismillah! initalized a Download for channel {channel_url}', print_log=True)
 		
@@ -245,7 +246,7 @@ class Downloader():
 	def write_all_playlists_info(self)-> None:
 		''' writes a json entry for each playlist which included all the videos in that playlist, this doesnt include the All Uploads playlist
 		to do that use scrapper.get_all_uploads_playlist_url(self.all_uploads_url), which is already used in  download_all_videos_from_channel(self)'''
-		self.log("Getting all playlist information...", print_log=True)
+		self.log("Getting all of the playlists information...", print_log=True)
 		all_playlists_info = self.scrapper.get_playlists_info(self.playlists_url)
 		all_playlists_info.pop('num_playlists')
 		for playlist in all_playlists_info.keys():
@@ -262,6 +263,7 @@ class Downloader():
 				self.write_all_playlists_info()
 				num_vids, all_videos_info = self.scrapper.get_video_info_from_playlist(all_videos_playlist_url)
 				all_videos_info[NUMBERVIDEOSKEY] = num_vids
+				all_videos_info[DATEKEY] = get_now_date()
 				self.write_playlist_info_json(ALL_UPLOADS_PLAYLIST_NAME , all_videos_info) #TODO make this async
 				return all_videos_info
 			else:
@@ -269,8 +271,6 @@ class Downloader():
 				self.log(f"Using current json record of the channel since it is still not too old")
 				json_file_path = os.path.join(self.playlists_dir, f"{ALL_UPLOADS_PLAYLIST_NAME}.json")
 				json_dict = read_json_file(json_file_path)
-				# num_vids = json_dict.pop(NUMBERVIDEOSKEY)	
-				# json_dict.pop(DATEKEY) # remove the unwanted key
 				return json_dict
 		except Exception as e:
 			self.handle_exception(e)
@@ -296,11 +296,18 @@ class Downloader():
 			playlists = os.listdir(self.playlists_dir)
 			if(len(playlists) == 0):
 				return True
+			
+			# all uploads playlist is usually downloaded last, so if it doesn't exist means that we didn't fetch all playlists and need to update
+			all_uploads_file_path = os.path.join(self.playlists_dir, ALL_UPLOADS_PLAYLIST_NAME)
+			file_exists = os.path.isfile(all_uploads_file_path)
+			if not file_exists:
+				return True
+
 			for pl in playlists:
 				if (".json" in pl):
 					pl = os.path.join(self.playlists_dir, pl)
 					json_dict = read_json_file(pl)
-					date = list(json_dict[DATEKEY].keys())[-1] #TODO idk if this gives the last updated date or not, please double check
+					date = list(json_dict[DATEKEY].keys())[-1] #example: '03/11/2021 05:46:32'
 					date_now = get_now_date()
 					days_delta = get_days_between_dates(date, date_now)
 					if days_delta > self.max_update_lag:

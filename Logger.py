@@ -17,6 +17,8 @@ class Log:
 			logging.error(msg)
 		elif level == "warn" or level == "warning":
 			logging.warning(msg)
+		elif level == 'critical':
+			logging.critical(msg)
 		else:
 			print ("unknown level, will default to info")
 			logging.warn("Passed error level is not good, will use info level to print next log entry")

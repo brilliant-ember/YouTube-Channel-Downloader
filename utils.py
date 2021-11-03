@@ -47,8 +47,8 @@ def get_days_between_dates(date1:str, date2: str) -> int:
 	'''returns the days delta between two dates'''
 	date1 = datetime.strptime(date1, DATEFORMAT )
 	date2 = datetime.strptime(date2, DATEFORMAT )
-
-	return (date1 - date2).days
+	delta = (date1 - date2).days # can be a negative number
+	return max(0, delta)
 
 def compare_dicts(existing_dict:dict, new_dict:dict) -> tuple[set, set]:
 	# TODO imporve doc string and add an example
