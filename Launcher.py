@@ -17,7 +17,7 @@ https://www.youtube.com/user/eaterbc
 channel_url = "https://www.youtube.com/user/FireSymphoney"
 
 ## How long should the automatic browser window wait until page loads, if you have slow internet connection you should increase this number
-browser_wait = 0
+browser_wait = 1
 
 #### Don't edit past this line #################
 
