@@ -1,15 +1,15 @@
 ## interface
 ''' Flow 1 backup entire channel.
 - user puts a channel url. program (P) goes to the "all uploaded" playlists and downloads all 
-of them and puts them in "videos" folder, it will also download all descriptions and first 
-few comments, states and (thumbnails optinally) then puts them accordingly in file names
-then creates a "table of content" webpage where the user has the option to 
-view "playlists" entirs where every video in the playlist entries will link to a video in the 
-"videos" folder and its corsponding description.
-Note some videos exist in a playlist but not in the 'all uploads' playlist
-say a link is not listed or points to another channel for example
-if it exists in another channel mention it.
-dont forget to mention the date of the channel download
+of them and puts them in "videos" folder, it will also download all descriptions, states and thumbnails url
+ then puts them accordingly in files with the same name as the video
+
+Note some videos exist in a playlist but not in the 'all uploads' playlist!!! 
+This happens if a video link is 'not listed' or points to another channel's video.
+
+
+Flow 2 download a single playlist
+
 '''
 
 ## Glossary
@@ -21,7 +21,9 @@ playlist: the video playlist whose url we passed
 '''
 
 from genericpath import exists
+from logging import error
 import pdb
+from typing import List
 from pytube import YouTube
 from pytube.extract import channel_name, publish_date
 from pytube.request import get, head
@@ -57,6 +59,7 @@ class Downloader():
 		####
 
 		self.init_dirs()
+		self.custom_dir_name = "" # if we want to download videos in a custom dir inside the channel dir (useful for playlist download)
 
 		## init urls
 		self.channel_url = channel_url
@@ -118,12 +121,16 @@ class Downloader():
 
 	def prepare_download_dir(self, video_title:str ) -> str:
 		'''Creates the file tree needed for the download and return the directory where the video
-		should be downloaded to.
+		should be downloaded to. if self.custom_dir is empty it will do videos/video_name
+		and if it is not empty iw till do custom_dir_name/video_name
 		If video exists it will raise VideoExistsError as the file is already there,
 		 because it should have been deleted if there was a partial download,
 		 otherwise will return the path dir of the video'''
 		video_title = remove_slash_from_strings(video_title)
-		video_path = os.path.join(self.channel_path, "videos", video_title)
+		if self.custom_dir_name:
+			video_path = os.path.join(self.channel_path, self.custom_dir_name, video_title)
+		else:
+			video_path = os.path.join(self.channel_path, "videos", video_title)
 		if not os.path.exists(video_path):
 			self.log(f'Created video dir {video_path}')
 			os.makedirs(video_path)
@@ -226,23 +233,48 @@ class Downloader():
 		finally:
 			self.download_in_progress = False
 
+	
+	def download_all_videos_in_list(self, num_videos:int, all_videos_list: List[str], success_msg:str, error_msg:str ):
+		videos_counter = 0
+		for link in all_videos_list:
+			self.download_video(link)
+			videos_counter += 1
+			if not (self.allow_download):
+				break
+		if videos_counter == num_videos:
+			self.log(success_msg)
+			self.log("Goodbye and God bless you!")
+		else:
+			self.log(error_msg)
+			self.log(f'Downloaded {videos_counter} out of {num_videos}')
+
+
 	def download_all_videos_from_channel(self)-> None:
 		self.log("Attempting to download All Uploads playlist")
 		all_videos_info = self.get_all_uploads_playlist_data()
 		num_vids = all_videos_info.pop(NUMBERVIDEOSKEY) # since we don't wanna iterate over the number of videos
 		all_videos_info.pop(DATEKEY) # since we dont wanna iternate over the date
-		videos_counter = 0
-		for link in all_videos_info.values():
-			self.download_video(link)
-			videos_counter += 1
-			if not (self.allow_download):
-				break
-		if videos_counter == num_vids:
-			self.log(f"WOOHOO! Successfully Downloaded all the channel videos! ---- {self.all_uploads_url}")
-			self.log("Goodbye and God bless you!")
-		else:
-			self.log(f"There was a problem and I couldnt download all the videos... Downloaded {videos_counter} out of {num_vids} for {self.all_uploads_url}")
+		videos = list(all_videos_info.values())
+		success_msg = f"WOOHOO! Successfully Downloaded all the channel videos! ---- {self.all_uploads_url}"
+		error_msg = f"There was a problem and I couldnt download all the videos for {self.all_uploads_url}"
+		self.download_all_videos_in_list(num_vids, videos, success_msg, error_msg)
 
+		
+	
+	def download_playlist_videos(self, playlist_url:str) -> None:
+		'''Downloads a single playlist from a channel, takes a playlist url as input. Example https://www.youtube.com/playlist?list=PLAROrg3NQn7ccopMKCIOQq4NyVfWIz0Nz'''
+		self.log("Getting the playlists information...", print_log=True)
+		playlist_stats = self.scrapper.get_playlist_stats(playlist_url)
+		pl_name = playlist_stats['playlist_title']
+		self.custom_dir_name = pl_name
+		num_vids, vids = self.scrapper.get_video_info_from_playlist(playlist_url)
+		success_msg = f'Downloaded all videos from playlist {pl_name} at {playlist_url}'
+		error_msg = f'Failed to downlload playlist {pl_name} at {playlist_url}'
+
+		self.download_all_videos_in_list(num_vids, vids, success_msg, error_msg)
+		
+
+		
 	def write_all_playlists_info(self)-> None:
 		''' writes a json entry for each playlist which included all the videos in that playlist, this doesnt include the All Uploads playlist
 		to do that use scrapper.get_all_uploads_playlist_url(self.all_uploads_url), which is already used in  download_all_videos_from_channel(self)'''

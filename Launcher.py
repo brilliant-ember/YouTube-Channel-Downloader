@@ -20,5 +20,7 @@ browser_wait = 1
 #### Don't edit past this line #################
 
 from Downloader import Downloader
-d = Downloader(channel_url ,browser_wait=browser_wait)
-d.download_all_videos_from_channel()
+c = "https://www.youtube.com/c/greatscottlab/playlists"
+d = Downloader(c ,browser_wait=browser_wait)
+# d.download_all_videos_from_channel()
+d.download_playlist_videos('https://www.youtube.com/playlist?list=PLAROrg3NQn7ccopMKCIOQq4NyVfWIz0Nz')

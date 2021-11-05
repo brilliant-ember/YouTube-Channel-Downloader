@@ -42,8 +42,10 @@ class ChannelScrapper():
 		self.logger.log(msg, level=level)
 	
 	def get(self, url:str) -> None:
+		'''Go to a website'''
 		self.current_scroll_height = 0
-		self.driver.get(url)
+		if self.driver.current_url != url:
+			self.driver.get(url)
 
 	def get_channel_name(self)-> str:
 		id = 'channel-name'
@@ -72,7 +74,7 @@ class ChannelScrapper():
 			pass 
 
 
-	def get_playlists_info(self, channel_playlists_url:str):
+	def get_playlists_info(self, channel_playlists_url:str)->dict:
 		'''gets all playlists info from the channel given a url, doesnt include all uploads playlists, example url https://www.youtube.com/c/greatscottlab/playlists
 		sample output
 		{
@@ -102,7 +104,6 @@ class ChannelScrapper():
 			num_playlists += 1
 
 		for playlistName in playlists_info.keys():
-			# pdb.set_trace()
 			playlist = playlists_info[playlistName]
 			url = playlist["url"]
 			_, vids = self.get_video_info_from_playlist(url)
@@ -122,8 +123,26 @@ class ChannelScrapper():
 		all_uploads_url = all_uploads_url.split('&')[0] # get rid of the query
 		return all_uploads_url
 
+	def get_playlist_stats(self,playlist_url:str)-> dict:
+		'''returns {playlist name, pl-description, pl-lastupdate}'''
+		self.get(playlist_url)
+		title = self.driver.find_element_by_xpath('/html/body/ytd-app/div/ytd-page-manager/ytd-browse/ytd-playlist-sidebar-renderer/div/ytd-playlist-sidebar-primary-info-renderer/h1/yt-formatted-string/a').text
+		desc = self.driver.find_elements_by_xpath('//*[@id="description"]')
+		desc_text = ""
+		for line in desc:
+			if line:
+				desc_text+= line.text
+				desc_text += " "
+		last_time_channel_updated_playlist = self.driver.find_element_by_xpath('/html/body/ytd-app/div/ytd-page-manager/ytd-browse/ytd-playlist-sidebar-renderer/div/ytd-playlist-sidebar-primary-info-renderer/div[1]/yt-formatted-string[3]/span[2]')
+		last_time_channel_updated_playlist = last_time_channel_updated_playlist.text
 
-	def get_video_info_from_playlist(self, playlist_url):
+		return {
+			'playlist_title':title,
+			'playlist_description': desc_text,
+			"last_time_channel_updated_playlist": last_time_channel_updated_playlist	
+		}
+
+	def get_video_info_from_playlist(self, playlist_url:str)-> tuple[int, dict]:
 		'''takes playlist url, returns the number of videos in that playlist and an object {"video1Title": "video1url", video2:url ... and so on}
 		example playlist url https://www.youtube.com/playlist?list=UU6mIxFTvXkWQVEHPsEdflzQ'''
 		self.get(playlist_url)
@@ -175,7 +194,6 @@ class ChannelScrapper():
 			if useless_loops_counter >= infinite_loop_saftey:
 				obtained_videos_num = len(vids.keys())
 				self.log(f'couldnt get all videos from the playlist as some videos are hidden or something, got {obtained_videos_num}/{num_videos} for playlist {playlist_url}', level="warn")
-				break_while_loop = True
 				break
 
 			self.scroll_down()
@@ -231,18 +249,6 @@ class ChannelScrapper():
 		self.driver.execute_script(f"window.scrollTo(0, {self.current_scroll_height});")
 
 
-
-# a = get_playlists_info(c, driver)
-# print(a)
-
-# cc = 'https://www.youtube.com/c/greatscottlab/videos'
-# aa = get_all_uploads_playlist_url(cc, driver)
-# print(aa)
-
-# s = ChannelScrapper("blah", headless=False, default_wait=1)
-# a = s.get_channel_about("https://www.youtube.com/c/ElectricianU/about")
-# print(a)
-
 def tests():
 	s = ChannelScrapper("https://www.youtube.com/user/FireSymphoney/featured", headless=False)
 	num, videos = s.get_video_info_from_playlist("https://www.youtube.com/playlist?list=UU6mIxFTvXkWQVEHPsEdflzQ")
@@ -259,9 +265,7 @@ def tests():
 
 # tests()
 
-# c = "https://www.youtube.com/c/greatscottlab/playlists"
-# s = ChannelScrapper(c, headless=False)
-# playlist_info = s.get_playlists_info(c)
+
 # print(playlist_info)
 # # debug commands
 
