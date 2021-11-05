@@ -61,7 +61,7 @@ def compare_dicts(existing_dict:dict, new_dict:dict) -> tuple[set, set]:
 	{3: '3', 4: '4', 5: '5'}
 	>>> compare_dicts(a,b)
 	({4, 5}, {1, 2})
-'''
+	'''
 	existing_content = set(existing_dict.keys())
 	current_online_content = set(new_dict.keys()) # the enw content
 	# keep a record of what videos the channel uploaded and what videos got removed
@@ -71,3 +71,14 @@ def compare_dicts(existing_dict:dict, new_dict:dict) -> tuple[set, set]:
 	return list(newly_added_keys), list(missing_keys)
 
 
+def remove_slash_from_strings(s:str)->str:
+	'''removes slashes and replaces them with -'''
+	# replaces the "/" with "／" look at them next to each other ／/ , they are different
+	# this is so video names with slashes in their names dont get created as multile dirs, example AC/DC
+	# would get created as a directory tree instead of a file names AC/DC
+	#
+	# some unicodes are not supported in all machines, will replace with -
+
+	s = s.replace("/","-")
+	s = s.replace("\\", "-")
+	return s

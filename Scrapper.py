@@ -31,6 +31,7 @@ class ChannelScrapper():
 
 		self.initial_scroll_height = 0 # initial scroll height
 		self.current_scroll_height = 0
+		self.get_channel_name()
 
 
 	def __del__(self):
@@ -44,11 +45,21 @@ class ChannelScrapper():
 		self.current_scroll_height = 0
 		self.driver.get(url)
 
+	def get_channel_name(self)-> str:
+		id = 'channel-name'
+		self.get(self.channel_url)
+		self.wait_for_page_load(id, type='id')
+		names = self.driver.find_elements_by_id(id)
+		for name in names:
+			if name.text:
+				return name.text
+
 	def wait_for_page_load(self, name:str, type="class_name"):
 		by = By.CLASS_NAME
+		type = type.lower()
 		wait = WebDriverWait(self.driver, self.default_wait)
 
-		if type == "tag_name":
+		if type == "tag_name" or type =='tag':
 			by = By.TAG_NAME
 
 		elif type== "id":
