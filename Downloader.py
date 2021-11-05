@@ -1,15 +1,15 @@
 ## interface
 ''' Flow 1 backup entire channel.
 - user puts a channel url. program (P) goes to the "all uploaded" playlists and downloads all 
-of them and puts them in "videos" folder, it will also download all descriptions and first 
-few comments, states and (thumbnails optinally) then puts them accordingly in file names
-then creates a "table of content" webpage where the user has the option to 
-view "playlists" entirs where every video in the playlist entries will link to a video in the 
-"videos" folder and its corsponding description.
-Note some videos exist in a playlist but not in the 'all uploads' playlist
-say a link is not listed or points to another channel for example
-if it exists in another channel mention it.
-dont forget to mention the date of the channel download
+of them and puts them in "videos" folder, it will also download all descriptions, states and thumbnails url
+ then puts them accordingly in files with the same name as the video
+
+Note some videos exist in a playlist but not in the 'all uploads' playlist!!! 
+This happens if a video link is 'not listed' or points to another channel's video.
+
+
+Flow 2 download a single playlist - TODO
+
 '''
 
 ## Glossary
