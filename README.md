@@ -9,9 +9,8 @@
 5. Run the following command `python3 Launcher.py` to start the download
 6. A firefox browser window will pop up and will automatically go through the channel, don't close it.
 7. You can press `ctrl c` in the terminal window to stop the download, and you can resume it later if you want running the same command you used to start the download the first time
-8. the info file will be outside the channel folder while the download is running, don't move it inside the channel folder, it is going to move on its own once the channel download has finished
-9. If you run into erros read the terminal error message it will give you a useful hint that you can google to solve the issue
-10. You can refer to the video tutorial below of me useing the downloader to backup my own channel
+8. If you run into erros read the terminal error message it will give you a useful hint that you can google to solve the issue
+9. You can refer to the video tutorial below of me useing the downloader to backup my own channel
 
 
 ## Channel url format guidlines
