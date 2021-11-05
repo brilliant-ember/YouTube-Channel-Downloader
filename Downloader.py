@@ -23,13 +23,12 @@ playlist: the video playlist whose url we passed
 from genericpath import exists
 import pdb
 from pytube import YouTube
-from pytube.extract import publish_date
-from pytube.request import head
+from pytube.extract import channel_name, publish_date
+from pytube.request import get, head
 from Scrapper import ChannelScrapper
 from Logger import Log
-from utils import get_now_date, compare_dicts, get_days_between_dates, over_write_json_file,read_json_file, DATEKEY, NUMBERVIDEOSKEY, ALL_UPLOADS_PLAYLIST_NAME
+from utils import get_now_date, compare_dicts, get_days_between_dates, over_write_json_file,read_json_file, DATEKEY, NUMBERVIDEOSKEY, ALL_UPLOADS_PLAYLIST_NAME, remove_slash_from_strings
 import os
-import json
 from sys import stdout, exit
 from signal import signal, SIGINT
 import shutil
@@ -37,89 +36,94 @@ import traceback
 
 
 class Downloader():
-	def __init__(self, channel_url, max_update_lag = 0, browser_wait = 3) -> None:
+	def __init__(self, channel_url, max_update_lag = 0, browser_wait = 3):
 
-	    signal(SIGINT, self.graceful_exit)
-	    self.all_uploads_url = channel_url + "/videos" # example https://www.youtube.com/user/FireSymphoney/videos
-	    self.playlists_url = channel_url + "/playlists" # https://www.youtube.com/user/FireSymphoney/playlists
-	    self.about_url = channel_url + "/about"
-	    self.current_video_information = {}
-	    self.current_video_output_path = ""
-	    self.channel_path = ""
-	    self.download_in_progress = False
-	    self.allow_download = True
-	    self.max_update_lag = max_update_lag # scrape the channel if the current json record is more than x days old, put zero to scrape the channel once regardless of the freshness of the record
-	    self.init_dir()
-	    log_file_path = os.path.join(self.root_dir, "logfile.txt")
-	    self.logger = Log(log_file_path)
-	    self.scrapper = ChannelScrapper(channel_url, self.logger, headless=False, default_wait=browser_wait)
-	    self.log = self.logger.log #make an alias to the Log.log() function so I don't have to type it all the time
-	    self.log(f'-------- Bismillah! initalized a Download for channel {channel_url}', print_log=True)
-		
-	def init_dir(self):
-		self.root_dir = "youtube_backup"
-		if not os.path.exists(self.root_dir):
-			#TODO add a log msg about creatiion for first time
-			os.makedirs(self.root_dir)
+		## things needed for first initalization in order
+		self.root_path = "youtube_backup"
+		self.init_root_dir()
+		log_file_path = os.path.join(self.root_path, "logfile.txt")
+		self.logger = Log(log_file_path) # the logger must follow the init root dir directly
+		self.log = self.logger.log #make an alias to the Log.log() function so I don't have to type it all the time
+		self.scrapper = ChannelScrapper(channel_url, self.logger, headless=False, default_wait=browser_wait)
+		self.channel_name = remove_slash_from_strings(fr"{self.scrapper.get_channel_name()}")
+		signal(SIGINT, self.graceful_exit)
+		#######
 
-		self.info_dir = os.path.join(self.root_dir, "info")
-		if not os.path.exists(self.info_dir):
-			#TODO add a log msg about creatiion for first time
-			os.makedirs(self.info_dir)
+		## init paths
+		self.channel_path = os.path.join(self.root_path, self.channel_name)
+		self.info_path = os.path.join(self.channel_path, "info")
+		self.playlists_path = os.path.join(self.info_path, "playlists")
+		self.current_video_output_path = ""
+		####
+
+		self.init_dirs()
+
+		## init urls
+		self.channel_url = channel_url
+		self.all_uploads_url = channel_url + "/videos" # example https://www.youtube.com/user/FireSymphoney/videos
+		self.playlists_url = channel_url + "/playlists" # https://www.youtube.com/user/FireSymphoney/playlists
+		self.about_url = channel_url + "/about"
+		####
 		
-		self.playlists_dir = os.path.join(self.info_dir, "playlists")
-		if not os.path.exists(self.playlists_dir):
-			#TODO add a log msg about creatiion for first time
-			os.makedirs(self.playlists_dir)
+		self.current_video_information = {}
+		self.download_in_progress = False
+		self.allow_download = True
+		self.max_update_lag = max_update_lag # scrape the channel if the current json record is more than x days old, put zero to scrape the channel once regardless of the freshness of the record
+		
+		self.log(f'Bismillah! initialized a Download for channel {self.channel_name} at {self.channel_path}', print_log=True)
+		
+	
+	def init_root_dir(self):
+		if not os.path.exists(self.root_path):
+			os.mkdir(self.root_path)
+
+	def init_dirs(self):
+		if not os.path.exists(self.channel_path):
+			os.mkdir(self.channel_path)
+			self.log(f'Created channel dir {self.channel_path}')
+
+		if not os.path.exists(self.info_path):
+			os.mkdir(self.info_path)
+			self.log(f'Created info dir {self.info_path}')
+		
+		if not os.path.exists(self.playlists_path):
+			os.mkdir(self.playlists_path)
+			self.log(f'Created playlists dir {self.playlists_path}')
 		
 	def graceful_exit(self, sig, frame):
 		self.log('You pressed Ctrl+C!')
 		self.allow_download = False
 		self.scrapper.__del__()
-		# counter = 0
-		# while not self.acknowledge_shutdown or counter <= 10: # . doens't work infinite loop
-		# 	print("waiting for last download to finish")
-		# 	asyncio.sleep(2)
-		# 	counter += 1
 		if (self.download_in_progress):
 			msg = "There was a download in progress during exit signal, will delete that video to avoid having courrupted files"
 			msg2 = f"will delete the last downloaded video at {self.current_video_output_path}"
 			self.log(msg, "warn")
 			self.log(msg2, "warn")
+			self.delete_file(self.current_video_output_path)
 
+
+		self.logger.exit()
+		exit(0)
+		
+	def delete_file(self, path:str):
+		if path:
 			try:
-				shutil.rmtree(self.current_video_output_path)
-				msg = "Delete complete"
+				shutil.rmtree(path)
+				msg = f"Delete complete {path}"
 				self.log(msg, "warn")
 			except OSError as e:
 				#TODO make this use the handle_error function
 				msg = "Error: %s - %s." % (e.filename, e.strerror)
 				self.log(msg, "warn")
 
-		self.logger.exit()
-		exit(0)
-		
-	def move_info_to_inside_the_channel(self):
-		'''Right now the info dir is outside the channel dir, we want to put everything inside the channel dir, this method will move the info dir to inside the channel dir at the end of the download'''
-		self.log('Will move the info dir to inside the channel dir now')
-		try:
-			shutil.move(self.info_dir, self.channel_path)
-		except Exception as e:
-			self.handle_exception(e)
-
-	def prepare_download_dir(self, channel_name:str, video_title:str ) -> str:
+	def prepare_download_dir(self, video_title:str ) -> str:
 		'''Creates the file tree needed for the download and return the directory where the video
-		should be downloaded to
+		should be downloaded to.
 		If video exists it will raise VideoExistsError as the file is already there,
+		 because it should have been deleted if there was a partial download,
 		 otherwise will return the path dir of the video'''
-		
-		channel_path = os.path.join(self.root_dir, channel_name)
-		if not os.path.exists(channel_path):
-			self.log(f'Created channel dir {channel_path}')
-			os.makedirs(channel_path)
-		self.channel_path = channel_path
-
-		video_path = os.path.join(channel_path, "videos" ,video_title)
+		video_title = remove_slash_from_strings(video_title)
+		video_path = os.path.join(self.channel_path, "videos", video_title)
 		if not os.path.exists(video_path):
 			self.log(f'Created video dir {video_path}')
 			os.makedirs(video_path)
@@ -127,7 +131,7 @@ class Downloader():
 
 		raise VideoExistsError
 
-	def write_downloaded_video_info_json(self )-> None:
+	def write_downloaded_video_info_json(self)-> None:
 		'''Writes the video information to a json file at the self.current_video_output_path directory'''
 		try:
 			json_file_path = os.path.join(self.current_video_output_path, "info.json")
@@ -142,7 +146,7 @@ class Downloader():
 	def write_playlist_info_json(self, playlist_name:str, playlist_info:dict)-> None:
 		'''Writes the playlist information to a json file at the self.=playlists_dir directory'''
 		try:
-			json_file_path = os.path.join(self.playlists_dir, f"{playlist_name}.json")
+			json_file_path = os.path.join(self.playlists_path, f"{playlist_name}.json")
 			if os.path.isfile(json_file_path):
 				json_dict = read_json_file(json_file_path) # this is the old file
 				# keep a record of what videos the channel uploaded and what videos got removed
@@ -157,13 +161,12 @@ class Downloader():
 			else:
 				playlist_info[DATEKEY] = {get_now_date(): "initial install"}
 				over_write_json_file(json_file_path, playlist_info)
-			self.log(f'Wrote the json file for {playlist_name} at {self.playlists_dir}')
+			self.log(f'Wrote the json file for {playlist_name} at {self.playlists_path}')
 
 		except Exception as e:
-			self.log(f"failed to write video info json object for {self.playlists_dir}", level="error")
+			self.log(f"failed to write video info json object for {self.playlists_path}", level="error")
 			self.handle_exception(e)
 			
-
 
 	def download_video(self, video_url:str, progressive=True) -> None:
 		'''progressive is limited to 720p max, but is both video and audio together, the other type 
@@ -193,7 +196,7 @@ class Downloader():
 				"video_url": video_url,
 				"keywords" : yt.keywords,
 			}
-			self.current_video_output_path = self.prepare_download_dir(yt.author, yt.title)
+			self.current_video_output_path = self.prepare_download_dir(fr"{yt.title}")
 
 			def download_callback(stream, file_path:str):
 				self.log(f'Downloaded {file_path}', print_log=True)
@@ -220,8 +223,6 @@ class Downloader():
 		except Exception as e:
 			self.log(error_msg, level="error")
 			self.handle_exception(e)
-
-
 		finally:
 			self.download_in_progress = False
 
@@ -238,7 +239,6 @@ class Downloader():
 				break
 		if videos_counter == num_vids:
 			self.log(f"WOOHOO! Successfully Downloaded all the channel videos! ---- {self.all_uploads_url}")
-			self.move_info_to_inside_the_channel()
 			self.log("Goodbye and God bless you!")
 		else:
 			self.log(f"There was a problem and I couldnt download all the videos... Downloaded {videos_counter} out of {num_vids} for {self.all_uploads_url}")
@@ -261,15 +261,17 @@ class Downloader():
 				self.write_channel_info()
 				all_videos_playlist_url = self.scrapper.get_all_uploads_playlist_url(self.all_uploads_url)
 				self.write_all_playlists_info()
+				# now we get all uploads playlist, note we should keep it in this order
+				# writing all uploads playlists should happen last, as we need that to determine if we downloaded all playlists
 				num_vids, all_videos_info = self.scrapper.get_video_info_from_playlist(all_videos_playlist_url)
 				all_videos_info[NUMBERVIDEOSKEY] = num_vids
 				all_videos_info[DATEKEY] = get_now_date()
-				self.write_playlist_info_json(ALL_UPLOADS_PLAYLIST_NAME , all_videos_info) #TODO make this async
+				self.write_playlist_info_json(ALL_UPLOADS_PLAYLIST_NAME , all_videos_info) 
 				return all_videos_info
 			else:
 				# we shouldn't scrape the channel website, instead read the record directly from json
 				self.log(f"Using current json record of the channel since it is still not too old")
-				json_file_path = os.path.join(self.playlists_dir, f"{ALL_UPLOADS_PLAYLIST_NAME}.json")
+				json_file_path = os.path.join(self.playlists_path, f"{ALL_UPLOADS_PLAYLIST_NAME}.json")
 				json_dict = read_json_file(json_file_path)
 				return json_dict
 		except Exception as e:
@@ -277,10 +279,10 @@ class Downloader():
 
 	def write_channel_info(self) -> None:
 		channel_info = self.scrapper.get_channel_about(self.about_url)
-		channel_info["url"] = self.about_url
+		channel_info["url"] = self.channel_url
 		channel_info[DATEKEY] = get_now_date()
 		try:
-			json_file_path = os.path.join(self.info_dir, "channel_info.json")
+			json_file_path = os.path.join(self.info_path, "channel_info.json")
 			over_write_json_file(json_file_path, channel_info)
 			self.log(f'Wrote the json file for channel info at {json_file_path}')
 
@@ -289,23 +291,22 @@ class Downloader():
 			self.handle_exception(e)
 
 
-
 	def should_update_json_record(self) -> bool:
 		'''Checks if the current json records are fresh enough, if they are old returns true meaning we should update our records by scrapping'''
 		try:
-			playlists = os.listdir(self.playlists_dir)
+			playlists = os.listdir(self.playlists_path)
 			if(len(playlists) == 0):
-				return True
+				return True 
 			
-			# all uploads playlist is usually downloaded last, so if it doesn't exist means that we didn't fetch all playlists and need to update
-			all_uploads_file_path = os.path.join(self.playlists_dir, ALL_UPLOADS_PLAYLIST_NAME)
+			# all uploads playlist is downloaded last, so if it doesn't exist means that we didn't fetch all playlists and need to update
+			all_uploads_file_path = os.path.join(self.playlists_path, f"{ALL_UPLOADS_PLAYLIST_NAME}.json")
 			file_exists = os.path.isfile(all_uploads_file_path)
 			if not file_exists:
 				return True
 
 			for pl in playlists:
 				if (".json" in pl):
-					pl = os.path.join(self.playlists_dir, pl)
+					pl = os.path.join(self.playlists_path, pl)
 					json_dict = read_json_file(pl)
 					date = list(json_dict[DATEKEY].keys())[-1] #example: '03/11/2021 05:46:32'
 					date_now = get_now_date()
@@ -362,16 +363,7 @@ def download_adaptive_video():
 def download_adpaptive_audio():
 	pass
 
-def get_playlist_videos():
-	''' get all the urls of a playlist, there are some urls found in 
-	the playlist that is not found in the play all playlist '''
 def get_videos_in_both_AUP_and_playlist(all_uploads_playlist_urls, playlists_urls ):
 	'''returns the union of the AUP and the playlist urls'''
 	return set(all_uploads_playlist_urls) & set(playlists_urls)
 	
-
-def get_playlists_stats(playlist_url:str):
-	'''gets the playlist stats like videos, and how many videos dont exist in the 
-	AUP, and their urls '''
-	pass
-
