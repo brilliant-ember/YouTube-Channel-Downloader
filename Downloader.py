@@ -156,6 +156,7 @@ class Downloader():
 
 	def write_playlist_info_json(self, playlist_name:str, playlist_info:dict)-> None:
 		'''Writes the playlist information to a json file at the self.=playlists_dir directory'''
+		playlist_name = remove_slash_from_strings(playlist_name)
 		try:
 			json_file_path = os.path.join(self.playlists_path, f"{playlist_name}.json")
 			if os.path.isfile(json_file_path):
