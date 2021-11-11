@@ -3,3 +3,5 @@ How to use Youtube channel downloader.mp4
 __pycache__/
 geckodriver.log
 youtube_backup/
+channels_to_backup.txt
+

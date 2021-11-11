@@ -1,15 +1,15 @@
 ## interface
 ''' Flow 1 backup entire channel.
 - user puts a channel url. program (P) goes to the "all uploaded" playlists and downloads all 
-of them and puts them in "videos" folder, it will also download all descriptions and first 
-few comments, states and (thumbnails optinally) then puts them accordingly in file names
-then creates a "table of content" webpage where the user has the option to 
-view "playlists" entirs where every video in the playlist entries will link to a video in the 
-"videos" folder and its corsponding description.
-Note some videos exist in a playlist but not in the 'all uploads' playlist
-say a link is not listed or points to another channel for example
-if it exists in another channel mention it.
-dont forget to mention the date of the channel download
+of them and puts them in "videos" folder, it will also download all descriptions, states and thumbnails url
+ then puts them accordingly in files with the same name as the video
+
+Note some videos exist in a playlist but not in the 'all uploads' playlist!!! 
+This happens if a video link is 'not listed' or points to another channel's video.
+
+
+Flow 2 download a single playlist - TODO
+
 '''
 
 ## Glossary
@@ -33,10 +33,11 @@ from sys import stdout, exit
 from signal import signal, SIGINT
 import shutil
 import traceback
+import re
 
 
 class Downloader():
-	def __init__(self, channel_url, max_update_lag = 0, browser_wait = 3):
+	def __init__(self, channel_url, max_update_lag = 0, browser_wait = 3, headless=False):
 
 		## things needed for first initalization in order
 		self.root_path = "youtube_backup"
@@ -44,7 +45,7 @@ class Downloader():
 		log_file_path = os.path.join(self.root_path, "logfile.txt")
 		self.logger = Log(log_file_path) # the logger must follow the init root dir directly
 		self.log = self.logger.log #make an alias to the Log.log() function so I don't have to type it all the time
-		self.scrapper = ChannelScrapper(channel_url, self.logger, headless=False, default_wait=browser_wait)
+		self.scrapper = ChannelScrapper(channel_url, self.logger, headless=headless, default_wait=browser_wait)
 		self.channel_name = remove_slash_from_strings(fr"{self.scrapper.get_channel_name()}")
 		signal(SIGINT, self.graceful_exit)
 		#######
@@ -322,8 +323,43 @@ class Downloader():
 	def handle_exception(self, e:Exception) -> None:
 		self.log(repr(e), level="error")
 		traceback.print_exc()
+	
+	def validate_downloaded_videos(self):
+		'''Will go to each downloaded video folder anc checks if we have the video and the info json file,
+		 it will also check if the the size of the files if more than 0 bytes. If the checks pass returns an empty list,
+		  otherwise returns a dict of all the video folders that failed'''
+		videos_dir = os.path.join(self.channel_path, "videos")
+		failed_downloads = []
+		for dir_path, _, _ in os.walk(videos_dir):
+			if dir_path == videos_dir:
+				continue # skip the iteration as this cannes /videos and we want /videos/actual_video
+			if self.did_download_fail(dir_path):
+				failed_downloads.append(dir_path)
+		
+		return failed_downloads
 
+		
+	
+	def did_download_fail(self, video_dir:str):
+		'''Returns True if video download failed and needs to be repeated, otherwise returns '''
+		for dir_path, _, dir_files in os.walk(video_dir):
+			if not len(dir_files) >= 2: # if we have less than two files, which are the info.json and video.mp4
+				return True
+			if not "info.json" in dir_files: # if we dont have the info json file
+				return True
+			is_there_mp4_file = False
+			for f in dir_files:
+				if re.search(".mp4$", f): # see if there's .mp4 at the end of one of the files
+					is_there_mp4_file = True
+				file_path = os.path.join(dir_path, f)
+				if os.path.getsize(file_path) == 0:
+					return True
+			if not is_there_mp4_file:
+				return True
+		return False
+		
 
+			
 class VideoExistsError(Exception):
 # a custom exception if the video file already exists
      pass
