@@ -21,7 +21,6 @@ playlist: the video playlist whose url we passed
 '''
 
 from genericpath import exists
-import pdb
 from pytube import YouTube
 from pytube.extract import channel_name, publish_date
 from pytube.request import get, head
@@ -34,7 +33,6 @@ from signal import signal, SIGINT
 import shutil
 import traceback
 import re
-
 
 class Downloader():
 	def __init__(self, channel_url, max_update_lag = 0, browser_wait = 3, headless=False):
@@ -67,9 +65,11 @@ class Downloader():
 		####
 		
 		self.current_video_information = {}
+		self.failed_videos = {} # a title:url record of all failed downloads
 		self.download_in_progress = False
 		self.allow_download = True
 		self.max_update_lag = max_update_lag # scrape the channel if the current json record is more than x days old, put zero to scrape the channel once regardless of the freshness of the record
+		self.num_created_video_dirs = 0
 		
 		self.log(f'Bismillah! initialized a Download for channel {self.channel_name} at {self.channel_path}', print_log=True)
 		
@@ -226,23 +226,71 @@ class Downloader():
 			self.handle_exception(e)
 		finally:
 			self.download_in_progress = False
+			if self.did_download_fail(self.current_video_output_path):
+				msg = f'''Failed to fully download \"{self.current_video_information['title']}\" will try again later {self.current_video_information['video_url']}'''
+				self.log(msg, level="warning")
+				self.failed_videos[self.current_video_information['title']] =  self.current_video_information["video_url"]
+				self.log("deleting partial downloads if they exist")
+				self.delete_file(self.current_video_output_path)
+				
+
+	def download_url_list(self, videos_url_list ):
+		'''Takes a videos url list and loops over them to download each of them, return true when it finishes, otherwise returns null'''
+		for link in videos_url_list:
+			self.download_video(link)
+			if not (self.allow_download):
+				break
+		return True
 
 	def download_all_videos_from_channel(self)-> None:
 		self.log("Attempting to download All Uploads playlist")
 		all_videos_info = self.get_all_uploads_playlist_data()
 		num_vids = all_videos_info.pop(NUMBERVIDEOSKEY) # since we don't wanna iterate over the number of videos
 		all_videos_info.pop(DATEKEY) # since we dont wanna iternate over the date
-		videos_counter = 0
-		for link in all_videos_info.values():
-			self.download_video(link)
-			videos_counter += 1
-			if not (self.allow_download):
-				break
-		if videos_counter == num_vids:
-			self.log(f"WOOHOO! Successfully Downloaded all the channel videos! ---- {self.all_uploads_url}")
-			self.log("Goodbye and God bless you!")
+		all_urls_list = list(all_videos_info.values())
+		did_finish = self.download_url_list(all_urls_list)
+		
+		if did_finish:
+			self.log(f"Finished going over all channel videos ---- {self.all_uploads_url}")
+			self.log("God bless you!")
 		else:
-			self.log(f"There was a problem and I couldnt download all the videos... Downloaded {videos_counter} out of {num_vids} for {self.all_uploads_url}")
+			self.log(f"There was a problem and I couldnt download all the videos... total downloads should be {num_vids} for {self.all_uploads_url}")
+		self.finish_download_and_show_stats()
+
+	def finish_download_and_show_stats(self):
+		self.log(f"Created a total of {self.num_created_video_dirs} video directories")
+		corrupted_downloads = self.validate_downloaded_videos() # this should be zero
+		if len(corrupted_downloads) != 0:
+			self.log(f"There are {len(corrupted_downloads)} corrupted downloads that should be deleted and repeated, please run the downloader again. here is a list: ", "error")
+			self.log(str(corrupted_downloads))
+			raise "Corrupted files downloaded"
+		
+		num_failed_downloads = len(self.failed_videos.keys())
+		if num_failed_downloads > 0:
+			self.log(f"{num_failed_downloads} videos failed to download, will try again")
+			self.handle_failed_downloads()
+
+
+		
+	def handle_failed_downloads(self):
+		self.log("Trying to retry failed downloads")
+		list_of_urls = list(self.failed_videos.values())
+		self.failed_videos = {} # reset it to empty
+		self.download_url_list(list_of_urls)
+		num_failed_downloads = len(self.failed_videos.keys())
+		if num_failed_downloads > 0: # if we still have failed downloads we just write the file and move on
+			self.log(f"{num_failed_downloads} videos failed to download, will try again")
+			try:
+				json_file_path = os.path.join(self.info_path, "failed_video_downloads.json")
+				self.log(f"Failed again to download some videos, will record the list of failed downloads in this file and move on {json_file_path}", level="warning")
+				over_write_json_file(json_file_path, self.failed_videos)
+				self.log(f'Wrote the json file for failed videos at {json_file_path}')
+
+			except Exception as e:
+				self.log(f"failed to write failed videos info json object for {over_write_json_file}", level="error")
+				self.handle_exception(e)
+
+
 
 	def write_all_playlists_info(self)-> None:
 		''' writes a json entry for each playlist which included all the videos in that playlist, this doesnt include the All Uploads playlist
@@ -335,8 +383,27 @@ class Downloader():
 				continue # skip the iteration as this cannes /videos and we want /videos/actual_video
 			if self.did_download_fail(dir_path):
 				failed_downloads.append(dir_path)
+
+			self.num_created_video_dirs = self.num_created_video_dirs + 1
 		
 		return failed_downloads
+
+	def clean_bad_downloads(self):
+		'''Will go to each downloaded video folder anc checks if we have the video and the info json file,
+		 it will also check if the the size of the files if more than 0 bytes. If the checks fail will delete that bad download file.
+		This method is called manually only for clean up of old downloads, before the implemntation of the current checks that delete the video as soon as it is not valid.
+		 So this function should be regarded as a manual job to ensure goodness of downloads made before the implementation of the validators
+		 '''
+		videos_dir = os.path.join(self.channel_path, "videos")
+		for dir_path, _, _ in os.walk(videos_dir):
+			if dir_path == videos_dir:
+				continue # skip the iteration as this cannes /videos and we want /videos/actual_video
+			if self.did_download_fail(dir_path):
+				self.log("Clean up task, will delete {}".format(dir_path))
+				self.delete_file(dir_path)
+
+		
+
 
 		
 	
