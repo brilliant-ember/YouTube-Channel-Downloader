@@ -33,6 +33,7 @@ from signal import signal, SIGINT
 import shutil
 import traceback
 import re
+import time
 
 class Downloader():
 	def __init__(self, channel_url, max_update_lag = 0, browser_wait = 3, headless=False):
@@ -45,6 +46,8 @@ class Downloader():
 		self.log = self.logger.log #make an alias to the Log.log() function so I don't have to type it all the time
 		self.scrapper = ChannelScrapper(channel_url, self.logger, headless=headless, default_wait=browser_wait)
 		self.channel_name = remove_slash_from_strings(fr"{self.scrapper.get_channel_name()}")
+		self.handle_null_channel_name(browser_wait, channel_url)
+		
 		signal(SIGINT, self.graceful_exit)
 		#######
 
@@ -73,7 +76,14 @@ class Downloader():
 		
 		self.log(f'Bismillah! initialized a Download for channel {self.channel_name} at {self.channel_path}', print_log=True)
 		
-	
+	def handle_null_channel_name(self, browser_wait:int, channel_url:str):
+		if not self.channel_name or self.channel_name =="None":
+			pause_time = browser_wait+5
+			time.sleep(pause_time)
+			self.channel_name = remove_slash_from_strings(fr"{self.scrapper.get_channel_name()}") # try again
+			if not self.channel_name or self.channel_name =="None":
+				self.log(f"Fatal Error channel name is null for {channel_url} ", 'critical')
+				raise "Critical error not downloading {} because channel name was null, please try again"
 	def init_root_dir(self):
 		if not os.path.exists(self.root_path):
 			os.mkdir(self.root_path)
@@ -95,7 +105,7 @@ class Downloader():
 		self.log('You pressed Ctrl+C!')
 		self.allow_download = False
 		self.scrapper.__del__()
-		if (self.download_in_progress):
+		if (self.download_in_progress and self.current_video_output_path):
 			msg = "There was a download in progress during exit signal, will delete that video to avoid having courrupted files"
 			msg2 = f"will delete the last downloaded video at {self.current_video_output_path}"
 			self.log(msg, "warn")
@@ -336,7 +346,7 @@ class Downloader():
 			self.log(f'Wrote the json file for channel info at {json_file_path}')
 
 		except Exception as e:
-			self.log(f"failed to write channell info json object for {json_file_path}", level="error")
+			self.log(f"failed to write channel info json object for {json_file_path}", level="error")
 			self.handle_exception(e)
 
 
@@ -394,6 +404,7 @@ class Downloader():
 		This method is called manually only for clean up of old downloads, before the implemntation of the current checks that delete the video as soon as it is not valid.
 		 So this function should be regarded as a manual job to ensure goodness of downloads made before the implementation of the validators
 		 '''
+		self.log('Cleaning bad downloads up...')
 		videos_dir = os.path.join(self.channel_path, "videos")
 		for dir_path, _, _ in os.walk(videos_dir):
 			if dir_path == videos_dir:
