@@ -131,16 +131,20 @@ class ChannelScrapper():
 		self.wait_for_page_load(containers_tag)
 		try:
 			# we get the number of videos from the playlist sidebar, only works if there's more than one video, if there's more an exception will be triggered and we have to catch that exception
-			num_videos = int(self.driver.find_element_by_xpath("/html/body/ytd-app/div/ytd-page-manager/ytd-browse/ytd-playlist-sidebar-renderer/div/ytd-playlist-sidebar-primary-info-renderer/div[1]/yt-formatted-string[1]/span[1]").text)
+			num_videos = self.driver.find_element_by_xpath("/html/body/ytd-app/div/ytd-page-manager/ytd-browse/ytd-playlist-sidebar-renderer/div/ytd-playlist-sidebar-primary-info-renderer/div[1]/yt-formatted-string[1]/span[1]").text
+			num_videos = num_videos.replace(',', '')
+			num_videos = int(num_videos)
 		except NoSuchElementException:
 			# There is an edge case when the playlist has only one video, and in that case the html xpath is different and the element innner html is not just a number
 			#  it is something like this '1 video'
 			xpath = '/html/body/ytd-app/div/ytd-page-manager/ytd-browse/ytd-playlist-sidebar-renderer/div/ytd-playlist-sidebar-primary-info-renderer/div[1]/yt-formatted-string[1]'
 			num_videos = self.driver.find_element_by_xpath(xpath).text
-			num_videos = int(num_videos.split(' ')[0])
+			num_videos = num_videos.split(' ')[0]
+			num_videos = int(num_videos.replace(',', ''))
 		except Exception as e:
 			traceback.print_exc()
-		
+			raise "Scrapper error, didnt find element"
+
 		i = 0
 		vids = {} # this is the videos we keep from scrapping
 		infinite_loop_saftey = 10 #if we go through the program this many times without changes to the main list we will shut the while loop down
