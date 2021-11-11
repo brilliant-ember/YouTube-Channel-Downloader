@@ -175,7 +175,7 @@ class Downloader():
 			self.log(f'Wrote the json file for {playlist_name} at {self.playlists_path}')
 
 		except Exception as e:
-			self.log(f"failed to write video info json object for {self.playlists_path}", level="error")
+			self.log(f"failed to write playlist info json object for {playlist_name} at {self.playlists_path}", level="error")
 			self.handle_exception(e)
 			
 
