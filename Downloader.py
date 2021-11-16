@@ -269,8 +269,8 @@ class Downloader():
 		self.finish_download_and_show_stats()
 
 	def finish_download_and_show_stats(self):
-		self.log(f"Created a total of {self.num_created_video_dirs} new video directories for {self.channel_name}")
 		corrupted_downloads = self.validate_downloaded_videos() # this should be zero
+		self.log(f"Created a total of {self.num_created_video_dirs} new video directories for {self.channel_name}")
 		if len(corrupted_downloads) != 0:
 			self.log(f"There are {len(corrupted_downloads)} corrupted downloads that should be deleted and repeated, please run the downloader again. here is a list: ", "error")
 			self.log(str(corrupted_downloads))
