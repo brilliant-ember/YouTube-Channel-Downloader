@@ -1,3 +1,4 @@
+from __future__ import annotations # to support var types in older python versions
 from datetime import datetime
 import json
 

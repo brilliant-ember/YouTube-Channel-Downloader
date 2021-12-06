@@ -1,0 +1,12 @@
+{
+    "_number_of_videos": "3",
+    "url": "https://www.youtube.com/playlist?list=PLGhvWnPsCr5-AbIVlHrt_nMIbFSlC968n",
+    "videos": {
+        "What Else Are Circuit Boards Good For": "https://www.youtube.com/watch?v=93ShN51_j-A&list=PLGhvWnPsCr5-AbIVlHrt_nMIbFSlC968n&index=1",
+        "Battery Replacement and Repair of a UPS650DV2 UPS": "https://www.youtube.com/watch?v=M0OLzbutXJ0&list=PLGhvWnPsCr5-AbIVlHrt_nMIbFSlC968n&index=2",
+        "Guest Video from Mohammad Zeehan: wireless sensing": "https://www.youtube.com/watch?v=RdmLH5fumpM&list=PLGhvWnPsCr5-AbIVlHrt_nMIbFSlC968n&index=3"
+    },
+    "_update_dates": {
+        "16/11/2021 18:09:30": "initial install"
+    }
+}
