@@ -257,7 +257,7 @@ class Downloader():
 		self.log("Attempting to download All Uploads playlist")
 		all_videos_info = self.get_all_uploads_playlist_data()
 		num_vids = all_videos_info.pop(NUMBERVIDEOSKEY) # since we don't wanna iterate over the number of videos
-		all_videos_info.pop(DATEKEY) # since we dont wanna iternate over the date
+		all_videos_info.pop(DATEKEY) # since we dont wanna iterate over the date
 		all_urls_list = list(all_videos_info.values())
 		did_finish = self.download_url_list(all_urls_list)
 		
@@ -324,6 +324,7 @@ class Downloader():
 				# now we get all uploads playlist, note we should keep it in this order
 				# writing all uploads playlists should happen last, as we need that to determine if we downloaded all playlists
 				num_vids, all_videos_info = self.scrapper.get_video_info_from_playlist(all_videos_playlist_url)
+				all_videos_info["videos"] = all_videos_info # abstract the videos info behind a key called videos
 				all_videos_info[NUMBERVIDEOSKEY] = num_vids
 				all_videos_info[DATEKEY] = get_now_date()
 				self.write_playlist_info_json(ALL_UPLOADS_PLAYLIST_NAME , all_videos_info) 
