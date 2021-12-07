@@ -1,8 +1,17 @@
 from __future__ import annotations # to support var types in older python versions
 from utils import NUMBERVIDEOSKEY, read_json_file
+import re
+import json
 
 parse_exception = Exception("Json object response has an unexpected format, did youtube change their json object structure or UI?")
 
+def extract_json_from_get_response(html_get_response:str)->dict:
+    regex_pattern = r"(var ytInitialData = )[\s|\S]*}]}}}" #matches the variable that contains the json object of interest
+    json_str = re.search(regex_pattern, html_get_response).group(0)
+    remove_substr = "var ytInitialData = "
+    json_str = json_str[len(remove_substr):]
+    return json.loads(json_str)
+    
 
 def extract_playlists_from_json_response(json_respone_var:dict) -> list[dict]:
     '''Takes the response of a GET requests on youtube.com/channel/playlists, and spits out the playlists data'''
@@ -29,14 +38,4 @@ def extract_playlists_from_json_response(json_respone_var:dict) -> list[dict]:
 
     return channel_created_playlists_metadata
 
-all_titles = ['Guest Videos', 'Guest Videos', 'Desktop Power supplies', 'Raspberry Pi Pico', 'Arduino Signal Generator', 'Viewer Projects', 'Building a guitar vacuum tube amplifier', 'FPGA', 'Desktop CNC', 'Arduino FPGA', 'Micsig STO1104c Oscilloscope', 'Multipurpose Lab Tool Build', 'Micro: Bit', 'Classic Circuits', 'Guest Video', 'BITX', 'Nixie Tubes', 'Amplifiers', 'Radio Related Stuff', 'Smart Home', 'PCB Design', 'Filters', '7400 Logic', '3D Printing', 'Particle Photon', 'Arduino and DC Motors', 'Blynk', 'esp32', 'Raspberry Pi', 'Oscillators']
-num_videos = 30
-j = read_json_file('tests/fixtures/get_response/datachannel[slash]playlists.json')
-playlists = extract_playlists_from_json_response(j)
 
-titles = []
-for p in playlists:
-    titles.append(p['title'])
-    
-assert all_titles == titles, "didn't download all playlist titles"
-assert len(playlists) == num_videos, "didn't get all playlists"
