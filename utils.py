@@ -85,3 +85,9 @@ def remove_slash_from_strings(s:str)->str:
 	s = s.replace("/","-")
 	s = s.replace("\\", "-")
 	return s
+
+def generate_playlist_url(playlist_id:str)->str:
+		"""Takes playlist Id and generates the playlist url
+		example https://www.youtube.com/playlist?list=PLGhvWnPsCr59gKqzqmUQrSNwl484NPvQY
+		"""
+		return f'https://www.youtube.com/playlist?list={playlist_id}'

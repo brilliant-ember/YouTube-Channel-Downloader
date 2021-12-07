@@ -14,8 +14,6 @@ from unittest.mock import patch
 
 class TestDownloader(unittest.TestCase):
 	def setUp(self) -> None:
-		self.fixtures_downloaded_channel_path = cwd + "/tests/fixtures/downloaded/Brilliant Ember" #TODO use os.path.join
-		
 		return super().setUp()
 
 	def test_extract_playlists_from_json_response(self):
