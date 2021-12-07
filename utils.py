@@ -12,8 +12,10 @@ import json
 # The DATEKEY is also used anywhere where we keep track of the date
 DATEKEY = "_update_dates" 
 NUMBERVIDEOSKEY = "_number_of_videos"
+NUMBER_OF_PLAYLISTS ="number_of_playlists"
 DATEFORMAT = "%d/%m/%Y %H:%M:%S"
 ALL_UPLOADS_PLAYLIST_NAME = "All Uploads"
+CREATED_PLAYLISTS = "Created playlists"
 
 ##### functions
 

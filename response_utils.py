@@ -2,8 +2,34 @@ from __future__ import annotations # to support var types in older python versio
 from utils import NUMBERVIDEOSKEY, read_json_file
 import re
 import json
+from requests import get
 
 parse_exception = Exception("Json object response has an unexpected format, did youtube change their json object structure or UI?")
+
+
+
+def perform_get_request_text(url:str)->str:
+    """Takes a url and performs a GET request returning the response.text
+    ARGS:
+        url: string
+    """
+    #TODO add timeout
+    r = get(url)
+    if r.ok:
+        return r.text
+    else:
+        raise Exception("cant do GET request")
+
+def get_playlists_listing(playlist_url:str)->list[dict]:
+    ''' Takes a playlist url and returns all created playlists is the form:
+    [{title:"playlist name",
+     playlist_id: "some unique id youtube uses"},
+     {},{} ...etc]'''
+
+    html_get_response = perform_get_request_text(playlist_url)
+    json_str = extract_json_from_get_response(html_get_response)
+    return extract_playlists_from_json_response(json_str)
+
 
 def extract_json_from_get_response(html_get_response:str)->dict:
     regex_pattern = r"(var ytInitialData = )[\s|\S]*}]}}}" #matches the variable that contains the json object of interest
