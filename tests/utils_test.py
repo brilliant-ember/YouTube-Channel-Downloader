@@ -18,8 +18,14 @@ class TestDownloader(unittest.TestCase):
 	def test_generate_playlist_url(self):
 		playlist_url = utils.generate_playlist_url("PLGhvWnPsCr59gKqzqmUQrSNwl484NPvQY")
 		expected = "https://www.youtube.com/playlist?list=PLGhvWnPsCr59gKqzqmUQrSNwl484NPvQY"
-		assert playlist_url == expected, "wrong channel url"
+		assert playlist_url == expected, "wrong playlist url"
 
+
+	def test_generate_video_url(self):
+		url = utils.generate_video_url("e3LqeN0e0as")
+		expected = "https://www.youtube.com/watch?v=e3LqeN0e0as"
+
+		assert url == expected, "wrong video url"
 
 
 if __name__ == '__main__':

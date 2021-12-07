@@ -91,3 +91,10 @@ def generate_playlist_url(playlist_id:str)->str:
 		example https://www.youtube.com/playlist?list=PLGhvWnPsCr59gKqzqmUQrSNwl484NPvQY
 		"""
 		return f'https://www.youtube.com/playlist?list={playlist_id}'
+
+def generate_video_url(video_id:str)->str:
+		"""Takes video Id and generates the video url
+		example https://www.youtube.com/watch?v=e3LqeN0e0as
+		"""
+		return f'https://www.youtube.com/watch?v={video_id}'
+

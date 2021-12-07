@@ -19,7 +19,7 @@ class TestDownloader(unittest.TestCase):
 	def test_extract_playlists_from_json_response(self):
 		all_titles = ['Guest Videos', 'Guest Videos', 'Desktop Power supplies', 'Raspberry Pi Pico', 'Arduino Signal Generator', 'Viewer Projects', 'Building a guitar vacuum tube amplifier', 'FPGA', 'Desktop CNC', 'Arduino FPGA', 'Micsig STO1104c Oscilloscope', 'Multipurpose Lab Tool Build', 'Micro: Bit', 'Classic Circuits', 'Guest Video', 'BITX', 'Nixie Tubes', 'Amplifiers', 'Radio Related Stuff', 'Smart Home', 'PCB Design', 'Filters', '7400 Logic', '3D Printing', 'Particle Photon', 'Arduino and DC Motors', 'Blynk', 'esp32', 'Raspberry Pi', 'Oscillators']
 		num_videos = 30
-		j = read_json_file(cwd + "/tests/fixtures/get_response/datachannel[slash]playlists.json")
+		j = read_json_file(cwd + "/tests/fixtures/get_response/playlists/datachannel[slash]playlists.json")
 		playlists = response_utils.extract_playlists_from_json_response(j)
 
 		titles = []
@@ -31,11 +31,11 @@ class TestDownloader(unittest.TestCase):
 
 	
 	def test_extract_json_from_get_response(self)->None:
-		get_resp_file = cwd + "/tests/fixtures/get_response/complete_channel[slash]playlists"
+		get_resp_file = cwd + "/tests/fixtures/get_response/playlists/complete_channel[slash]playlists"
 		with open(get_resp_file, "r") as file:
 			get_request_response_html = file.read()
 		json_dict = response_utils.extract_json_from_get_response(get_request_response_html)
-		expected_json = read_json_file(cwd + "/tests/fixtures/get_response/datachannel[slash]playlists.json")
+		expected_json = read_json_file(cwd + "/tests/fixtures/get_response/playlists/datachannel[slash]playlists.json")
 		assert type(json_dict) == dict, "the type is not a dictionary"
 		assert "contents" in json_dict.keys(), "json_dict doesn't have the proper first key"
 		assert expected_json == json_dict, "extract json doesnt match expected json"
