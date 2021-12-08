@@ -1,7 +1,7 @@
 ## Notes
 
-- `tests/fixtures/get_response/datachannel[slash]playlists.json` this is the variable 'var ytInitialData' extracted from the GET request of 'https://www.youtube.com/c/learnelectronics/playlists' 
-the complete response is in  YouTube-Channel-Downloader/tests/fixtures/get_response/complete_channel[slash]playlists
+- `tests/fixtures/get_response/payload.json` this is the variable 'var ytInitialData' extracted from the GET request of 'https://www.youtube.com/c/learnelectronics/playlists' 
+the complete response is in  YouTube-Channel-Downloader/tests/fixtures/get_response/full_response
 - the url for a specific playlist is `https://www.youtube.com/c/learnelectronics/playlists?list=playlist_id`
 
 

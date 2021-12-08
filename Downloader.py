@@ -26,7 +26,8 @@ from pytube.extract import channel_name, publish_date
 from pytube.request import get, head
 from Scrapper import ChannelScrapper
 from Logger import Log
-from utils import get_now_date, compare_dicts, get_days_between_dates, over_write_json_file,read_json_file, DATEKEY, NUMBERVIDEOSKEY, ALL_UPLOADS_PLAYLIST_NAME, remove_slash_from_strings
+from utils import get_now_date, compare_dicts, get_days_between_dates, over_write_json_file,read_json_file,CREATED_PLAYLISTS,NUMBER_OF_PLAYLISTS ,DATEKEY, NUMBERVIDEOSKEY, ALL_UPLOADS_PLAYLIST_NAME, remove_slash_from_strings
+import response_utils
 import os
 from sys import stdout, exit
 from signal import signal, SIGINT
@@ -340,8 +341,12 @@ class Downloader():
 
 	def write_channel_info(self) -> None:
 		channel_info = self.scrapper.get_channel_about(self.about_url)
+		all_playlists = response_utils.get_playlists_listing(self.playlists_url)
 		channel_info["url"] = self.channel_url
 		channel_info[DATEKEY] = get_now_date()
+		channel_info[CREATED_PLAYLISTS] = all_playlists
+		channel_info[NUMBER_OF_PLAYLISTS] = len(all_playlists)
+
 		try:
 			json_file_path = os.path.join(self.info_path, "channel_info.json")
 			over_write_json_file(json_file_path, channel_info)

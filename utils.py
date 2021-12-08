@@ -25,7 +25,7 @@ def read_json_file(json_file_path:str)->dict:
 	return json.loads(data)
 
 def over_write_json_file(file_path:str, data_dict:dict)->None:
-	'''creates the file if it doesnt exisit otherwise overwrites it with the new dictinoary passed'''
+	'''creates the file if it doesnt exisit otherwise overwrites it with the new dictionary passed'''
 	with open(file_path, "w") as json_file:
 		json_file.write(json.dumps(data_dict, indent=4, default=str))
 

@@ -20,18 +20,78 @@ def perform_get_request_text(url:str)->str:
     else:
         raise Exception("cant do GET request")
 
-def get_playlists_listing(playlist_url:str)->list[dict]:
-    ''' Takes a playlist url and returns all created playlists is the form:
-    [{title:"playlist name",
-     playlist_id: "some unique id youtube uses"},
-     {},{} ...etc]'''
 
-    html_get_response = perform_get_request_text(playlist_url)
-    json_str = extract_json_from_get_response(html_get_response)
+def extract_json_from_playlist_id_get_response(html_get_response:str)->dict:
+    '''extracts json obj from response of request youtube.com?playlist?list=ID'''
+    regex_pattern = r"(var ytInitialData = )[\s|\S]*}}};" #matches the variable that contains the json object of interest
+    json_str = re.search(regex_pattern, html_get_response).group(0)
+    remove_substr = "var ytInitialData = "
+    json_str = json_str[len(remove_substr):-1]
+    return json.loads(json_str)
+
+def extract_playlist_info_from_json_response(playlist_json:dict) -> dict:
+    ''' takes a playlist json dict and outputs a dict like this:
+    {
+        "playlist_id":id,
+        "playlist_name":name,
+        "playlist_description":desc,
+        "number_of_videos":int,
+        "videos":{"id":{ "title":title, 'length':lengthText}, "id":{} ...}
+    }
+    NOTE that you can only get the 1st 100 video links, after that you need to 
+    scroll down to generate the remaining video links
+    '''
+    playlist_name = playlist_json['metadata']['playlistMetadataRenderer']['title']
+    playlist_description = playlist_json['microformat']['microformatDataRenderer']['description']
+    j = playlist_json['contents']['twoColumnBrowseResultsRenderer']['tabs']
+    j = j[0]['tabRenderer']['content']['sectionListRenderer']['contents'][0]
+    j = j['itemSectionRenderer']['contents'][0]['playlistVideoListRenderer']
+    playlist_id = j['playlistId']
+    videos_obj = j['contents']
+    videos = {}
+    num_videos = 0
+    for video_obj in videos_obj:
+        num_videos = num_videos + 1
+        video_obj = video_obj['playlistVideoRenderer']
+        video_id = video_obj['videoId']
+        video_title = video_obj['title']['runs'][0]['text']
+        # length_text = video_obj['lengthText']['accessibility']['accessibilityData']['label']
+        length_text = video_obj['lengthText']['simpleText']
+        videos[video_id]  = {"video_title":video_title, "length":length_text}
+
+    return {
+        "playlist_id": playlist_id,
+        "playlist_name": playlist_name,
+        "playlist_description":playlist_description,
+        NUMBERVIDEOSKEY: num_videos,
+        "videos": videos
+    }
+
+
+def get_playlist_info(playlist_url:str)->dict:
+    '''takes a playlist url like https://www.youtube.com/playlist?list=PLGhvWnPsCr59gKqzqmUQrSNwl484NPvQY and
+    returns that playlist info'''
+    resp = perform_get_request_text(playlist_url)
+    json_str = extract_json_from_playlist_id_get_response(resp)
+    return (extract_playlist_info_from_json_response(json_str))
+
+def get_playlists_listing(playlists_url:str)->list[dict]:
+    ''' Takes the channels all-playlist url and returns all created playlists is the form:
+   [
+        {
+            "title": "Guest Videos",
+            "playlist_id": "PLGhvWnPsCr5-x1S6oAmAQk66rrDeZ2yoB",
+            "_number_of_videos": 3
+        },{},{} ...etc'''
+
+    html_get_response = perform_get_request_text(playlists_url)
+    json_str = extract_json_from_playlists_get_response(html_get_response)
     return extract_playlists_from_json_response(json_str)
 
 
-def extract_json_from_get_response(html_get_response:str)->dict:
+def extract_json_from_playlists_get_response(html_get_response:str)->dict:
+    ''' gets the json object in the response of a request like
+    youtube.com/c/channelName/playlists'''
     regex_pattern = r"(var ytInitialData = )[\s|\S]*}]}}}" #matches the variable that contains the json object of interest
     json_str = re.search(regex_pattern, html_get_response).group(0)
     remove_substr = "var ytInitialData = "
@@ -44,12 +104,16 @@ def extract_playlists_from_json_response(json_respone_var:dict) -> list[dict]:
     j = json_respone_var['contents']['twoColumnBrowseResultsRenderer']['tabs']
     # currently (dec 6 -2021) there are two types 1. Created playlists and Saved playlists
     created_playlists = j[2]['tabRenderer']['content']['sectionListRenderer']['contents'][0]
-    created_playlists = created_playlists['itemSectionRenderer']['contents'][0]['shelfRenderer']
-    # this should be "Created playlists"
-    playlist_type =  created_playlists['title']['runs'][0]['text'] 
-    if playlist_type != 'Created playlists':
-        raise parse_exception
-    created_playlists = created_playlists['content']['horizontalListRenderer']['items']
+    try:
+        created_playlists = created_playlists['itemSectionRenderer']['contents'][0]['shelfRenderer']
+        # this should be "Created playlists"
+        playlist_type =  created_playlists['title']['runs'][0]['text'] 
+        if playlist_type != 'Created playlists':
+            raise parse_exception
+        created_playlists = created_playlists['content']['horizontalListRenderer']['items']
+    except KeyError:
+        created_playlists = created_playlists['itemSectionRenderer']['contents'][0]['gridRenderer']['items']
+        
     channel_created_playlists_metadata = []
     for p in created_playlists:
         p = p['gridPlaylistRenderer']
@@ -64,4 +128,16 @@ def extract_playlists_from_json_response(json_respone_var:dict) -> list[dict]:
 
     return channel_created_playlists_metadata
 
+from utils import over_write_json_file
+u = 'https://www.youtube.com/c/greatscottlab/playlists'
+j = perform_get_request_text(u)
+j = extract_json_from_playlists_get_response(j)
+over_write_json_file('tests/fixtures/get_response/playlist?list=id/payload2.json', j)
 
+
+
+# url1= "https://www.youtube.com/playlist?list=PLpR68gbIfkKmrNp3yeVmZRyNR_Lb6XM5Q"
+# url2= "https://www.youtube.com/playlist?list=PLGhvWnPsCr59gKqzqmUQrSNwl484NPvQY"
+# j = get_playlist_info(url1)
+# over_write_json_file("b.json",j)
+# assert j["_number_of_videos"] == len(list(j['videos'].keys())), "length_not_equal didnt get all videos or something"
