@@ -27,7 +27,7 @@ from pytube.request import get, head
 from Scrapper import ChannelScrapper
 from Logger import Log
 from utils import get_now_date, compare_dicts, get_days_between_dates, over_write_json_file,read_json_file,CREATED_PLAYLISTS,NUMBER_OF_PLAYLISTS ,DATEKEY, NUMBERVIDEOSKEY, ALL_UPLOADS_PLAYLIST_NAME, remove_slash_from_strings
-import response_utils
+from  response_utils import Response_Utils
 import os
 from sys import stdout, exit
 from signal import signal, SIGINT
@@ -39,7 +39,7 @@ import time
 class Downloader():
 	def __init__(self, channel_url, max_update_lag = 0, browser_wait = 3, headless=False):
 
-		## things needed for first initalization in order
+		## things needed for first initialization in order
 		self.root_path = "youtube_backup"
 		self.init_root_dir()
 		log_file_path = os.path.join(self.root_path, "logfile.txt")
@@ -74,6 +74,7 @@ class Downloader():
 		self.allow_download = True
 		self.max_update_lag = max_update_lag # scrape the channel if the current json record is more than x days old, put zero to scrape the channel once regardless of the freshness of the record
 		self.num_created_video_dirs = 0
+		self.response_utils = Response_Utils()
 		
 		self.log(f'Bismillah! initialized a Download for channel {self.channel_name} at {self.channel_path}', print_log=True)
 		
@@ -341,7 +342,7 @@ class Downloader():
 
 	def write_channel_info(self) -> None:
 		channel_info = self.scrapper.get_channel_about(self.about_url)
-		all_playlists = response_utils.get_playlists_listing(self.playlists_url)
+		all_playlists = self.response_utils.get_playlists_listing(self.playlists_url)
 		channel_info["url"] = self.channel_url
 		channel_info[DATEKEY] = get_now_date()
 		channel_info[CREATED_PLAYLISTS] = all_playlists
