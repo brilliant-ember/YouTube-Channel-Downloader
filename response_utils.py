@@ -23,7 +23,9 @@ class Response_Utils():
             raise Exception("cant do GET request")
 
     def get_playlist_info(self, playlist_url:str)->dict:
-        '''takes a playlist url like https://www.youtube.com/playlist?list=PLGhvWnPsCr59gKqzqmUQrSNwl484NPvQY and
+        '''
+        NOT READY FOR USE, use scrapper instead. Doenst auto scroll down when we get beyond 100 videos
+        takes a playlist url like https://www.youtube.com/playlist?list=PLGhvWnPsCr59gKqzqmUQrSNwl484NPvQY and
         returns that playlist info'''
         resp = self.perform_get_request_text(playlist_url)
         json_str = self.__extract_json_from_playlist_id_get_response(resp)
