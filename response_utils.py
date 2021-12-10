@@ -1,5 +1,5 @@
 from __future__ import annotations # to support var types in older python versions
-from utils import NUMBERVIDEOSKEY, read_json_file
+from utils import NUMBERVIDEOSKEY, read_json_file, NeedToScrollDownError, json_value_extract
 import re
 import json
 from requests import get
@@ -70,24 +70,34 @@ class Response_Utils():
         playlist_id = j['playlistId']
         videos_obj = j['contents']
         videos = {}
-        num_videos = 0
+        num_available_videos = 0 # hidden or membership videos should not increment this
         for video_obj in videos_obj:
-            num_videos = num_videos + 1
-            video_obj = video_obj['playlistVideoRenderer']
-            video_id = video_obj['videoId']
-            video_title = video_obj['title']['runs'][0]['text']
-            # length_text = video_obj['lengthText']['accessibility']['accessibilityData']['label']
-            length_text = video_obj['lengthText']['simpleText']
-            videos[video_id]  = {"video_title":video_title, "length":length_text}
+            if "playlistVideoRenderer" in video_obj.keys():
+                video_obj = video_obj['playlistVideoRenderer']
+                if self.__is_video_members_only(video_obj):
+                    #skip download and mention that this video is members only
+                    pass
+                num_available_videos = num_available_videos + 1
+                video_id = video_obj['videoId']
+                video_title = video_obj['title']['runs'][0]['text']
+                # length_text = video_obj['lengthText']['accessibility']['accessibilityData']['label']
+                length_text = video_obj['lengthText']['simpleText']
+                videos[video_id]  = {"video_title":video_title, "length":length_text}
+            else:
+                # case when you need to scroll down to get the rest of the playlist videos
+                pass
+
+
 
         return {
             "playlist_id": playlist_id,
             "playlist_name": playlist_name,
             "playlist_description":playlist_description,
-            NUMBERVIDEOSKEY: num_videos,
+            NUMBERVIDEOSKEY: num_available_videos,
             "videos": videos
         }
-
+    def __is_video_members_only(self, video_playlist_renderer:dict)->bool:
+        pass
 
     def __extract_json_from_playlists_get_response(self, html_get_response:str)->dict:
         ''' gets the json object in the response of a request like
@@ -131,13 +141,10 @@ class Response_Utils():
 
 
 
-## TODO add these commented lines to a functionl test where I do requests
-# from utils import over_write_json_file
-# u = 'https://www.youtube.com/c/greatscottlab/playlists'
-# j = perform_get_request_text(u)
-# j = extract_json_from_playlists_get_response(j)
-# over_write_json_file('tests/fixtures/get_response/playlist?list=id/payload2.json', j)
-
+r = Response_Utils()
+# j = r.get_playlist_info('https://www.youtube.com/playlist?list=PL0o_zxa4K1BWYThyV4T2Allw6zY0jEumv')
+# import utils
+# utils.over_write_json_file('tests/fixtures/downloaded/playlist_extracted_info.json',j)
 
 
 # url1= "https://www.youtube.com/playlist?list=PLpR68gbIfkKmrNp3yeVmZRyNR_Lb6XM5Q"

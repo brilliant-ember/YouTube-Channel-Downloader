@@ -3,6 +3,7 @@
 - `tests/fixtures/get_response/payload.json` this is the variable 'var ytInitialData' extracted from the GET request of 'https://www.youtube.com/c/learnelectronics/playlists' 
 the complete response is in  YouTube-Channel-Downloader/tests/fixtures/get_response/full_response
 - the url for a specific playlist is `https://www.youtube.com/c/learnelectronics/playlists?list=playlist_id`
+- tests in `/tests/request_testing`  are not typical unit tests, they do GET requests to check if youtube has changed the response format that we can't parse it anymore
 
 
 

@@ -1,0 +1,18 @@
+POST /youtubei/v1/browse?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8 HTTP/2
+Host: www.youtube.com
+User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0
+Accept: */*
+Accept-Language: en-CA,en-US;q=0.7,en;q=0.3
+Accept-Encoding: gzip, deflate, br
+Referer: https://www.youtube.com/playlist?list=PL0o_zxa4K1BWYThyV4T2Allw6zY0jEumv
+Content-Type: application/json
+X-Goog-Visitor-Id: CgtzY3lnRzVuelFVWSjUks2NBg%3D%3D
+X-Youtube-Client-Name: 1
+X-Youtube-Client-Version: 2.20211206.06.01
+Origin: https://www.youtube.com
+Content-Length: 1938
+DNT: 1
+Connection: keep-alive
+Cookie: YSC=oRjD26VgCKE; VISITOR_INFO1_LIVE=scygG5nzQUY; PREF=tz=America.Toronto&f6=40000000; GPS=1
+Sec-GPC: 1
+TE: Trailers

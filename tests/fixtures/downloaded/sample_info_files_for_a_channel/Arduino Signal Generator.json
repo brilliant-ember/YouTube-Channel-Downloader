@@ -1,0 +1,11 @@
+{
+    "_number_of_videos": "2",
+    "url": "https://www.youtube.com/playlist?list=PLGhvWnPsCr5-LVuYpACTXcUX37cO4A-a0",
+    "videos": {
+        "Arduino and AD9833 Signal Generator Part 1": "https://www.youtube.com/watch?v=YBtp8LvUnlg&list=PLGhvWnPsCr5-LVuYpACTXcUX37cO4A-a0&index=1",
+        "Arduino and AD9833 Signal Generator Part 2": "https://www.youtube.com/watch?v=qy7FKdQWVKE&list=PLGhvWnPsCr5-LVuYpACTXcUX37cO4A-a0&index=2"
+    },
+    "_update_dates": {
+        "16/11/2021 18:09:30": "initial install"
+    }
+}

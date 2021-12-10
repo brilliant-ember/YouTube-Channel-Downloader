@@ -13,7 +13,8 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from Logger import Log
 import time
 import pdb
-
+import utils
+from response_utils import Response_Utils
 
 class ChannelScrapper():
 	def __init__(self, channel_url: str, logger:Log, headless = True, default_wait = 1):
@@ -91,15 +92,24 @@ class ChannelScrapper():
 		playlist_class_name = 'ytd-grid-playlist-renderer'
 		self.get(channel_playlists_url)
 		self.wait_for_page_load(playlist_class_name)
-		elems = self.driver.find_elements_by_class_name(playlist_class_name)
-		num_playlists = 0
+		# elems = self.driver.find_elements_by_class_name(playlist_class_name)
+		# num_playlists = 0
 		playlists_info = {}
-		for playlist_counter in range(0, len(elems), 6): # every 6 elements there is a new playlist (could change in the future)
-			num_videos = elems[playlist_counter].text
-			title = elems[playlist_counter +1].text
-			link =elems[playlist_counter +5].find_element_by_tag_name('a').get_attribute('href')
-			playlists_info[title] = {'_number_of_videos':num_videos.split('\n')[0], "url":link}
-			num_playlists += 1
+		# for playlist_counter in range(0, len(elems), 6): # every 6 elements there is a new playlist (could change in the future)
+		# 	num_videos = elems[playlist_counter].text
+		# 	title = elems[playlist_counter +1].text
+		# 	link =elems[playlist_counter +5].find_element_by_tag_name('a').get_attribute('href')
+		# 	playlists_info[title] = {'_number_of_videos':num_videos.split('\n')[0], "url":link}
+		# 	num_playlists += 1
+		response_utils = Response_Utils()
+		all_pl = response_utils.get_playlists_listing(channel_playlists_url)
+		num_playlists = len(all_pl)
+		for pl in all_pl:
+			playlists_info[pl['title']] = {
+				utils.NUMBERVIDEOSKEY: pl[utils.NUMBERVIDEOSKEY],
+				"url":utils.generate_playlist_url(pl['playlist_id'])
+				}
+
 
 		for playlistName in playlists_info.keys():
 			# pdb.set_trace()
@@ -260,7 +270,8 @@ def tests():
 	playListInfo = s.get_playlists_info(pl_url)
 	assert type(playListInfo) == dict, "the info should be dict"
 	# pdb.set_trace()
-
+# s = ChannelScrapper()
+# s.get_playlists_info()
 # tests()
 
 # c = "https://www.youtube.com/c/greatscottlab/playlists"
