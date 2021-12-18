@@ -98,27 +98,27 @@ def generate_video_url(video_id:str)->str:
 		"""
 		return f'https://www.youtube.com/watch?v={video_id}'
 
-def json_value_extract(obj:dict, wanted_key)->list:
-    '''Recursively finds the values of the argument key from nested dictionary JSON '''
-    found_values = []
+def json_value_extract(obj:dict, wanted_key) -> list:
+	'''Recursively finds the values of the argument key from nested dictionary JSON '''
+	found_values = []
 
-    def extract(obj, found_values:list, key):
-        '''Recursively search for values of the key in JSON tree'''
-        if isinstance(obj, dict):
-            for k, v in obj.items():
-                if isinstance(v, (dict, list)):
-                    extract(v, found_values, key)
-                elif k == key:
-                    found_values.append(v)
-        elif isinstance(obj, list):
-            for item in obj:
-                extract(item, found_values, key)
-        return found_values
+	def extract(obj:dict, found_values:list, key)->list:
+		'''Recursively search for all values of the key in JSON tree, if return_first_match_only then it returns the value as soon as it finds a matching key'''
+		if isinstance(obj, dict):
+			for k, v in obj.items():
+				if k == key:
+					found_values.append(v)
+				elif isinstance(v, (dict, list)):
+					extract(v, found_values, key)
+		elif isinstance(obj, list):
+			for item in obj:
+				extract(item, found_values, key)
+		return found_values
 
-    values = extract(obj, found_values, wanted_key)
-    return values
+	found_values = extract(obj, found_values, wanted_key)
+	return found_values
 
 
 class NeedToScrollDownError(Exception):
 # a custom exception if you need to scroll down to render the rest of the content
-     pass
+	 pass

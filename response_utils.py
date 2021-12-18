@@ -29,8 +29,8 @@ class Response_Utils():
         takes a playlist url like https://www.youtube.com/playlist?list=PLGhvWnPsCr59gKqzqmUQrSNwl484NPvQY and
         returns that playlist info'''
         resp = self.perform_get_request_text(playlist_url)
-        my_json = self.__extract_json_from_playlist_id_get_response(resp)
-        return (self.__extract_playlist_info_from_json_response(my_json))
+        my_json = self.__extract_json_from_specific_playlist_get_response(resp)
+        return (self.__extract_playlist_info_from_json_payload(my_json))
 
     def get_playlists_listing(self, playlists_url:str)->list[dict]:
         ''' 
@@ -45,64 +45,17 @@ class Response_Utils():
 
         html_get_response = self.perform_get_request_text(playlists_url)
         json_str = self.__extract_json_from_playlists_get_response(html_get_response)
-        return self.__extract_playlists_from_json_response(json_str)
+        return self.__extract_playlists_from_json_payload(json_str)
 
-    def __extract_json_from_playlist_id_get_response(self, html_get_response:str)->dict:
+    def __extract_json_from_specific_playlist_get_response(self, html_get_response:str)->dict:
         '''extracts json obj from response of request youtube.com?playlist?list=ID'''
         regex_pattern = r"(var ytInitialData = )[\s|\S]*}}};" #matches the variable that contains the json object of interest
         json_str = re.search(regex_pattern, html_get_response).group(0)
         remove_substr = "var ytInitialData = "
         json_str = json_str[len(remove_substr):-1]
         return json.loads(json_str)
-
-    # def __extract_playlist_info_from_json_response(self, playlist_json:dict) -> dict:
-    #     ''' takes a playlist json dict and outputs a dict like this:
-    #     {
-    #         "playlist_id":id,
-    #         "playlist_name":name,
-    #         "playlist_description":desc,
-    #         "number_of_videos":int,
-    #         "videos":{"id":{ "title":title, 'length':lengthText}, "id":{} ...}
-    #     }
-    #     NOTE that you can only get the 1st 100 video links, after that you need to 
-    #     scroll down to generate the remaining video links
-    #     '''
-    #     playlist_name = playlist_json['metadata']['playlistMetadataRenderer']['title']
-    #     playlist_description = playlist_json['microformat']['microformatDataRenderer']['description']
-    #     j = playlist_json['contents']['twoColumnBrowseResultsRenderer']['tabs']
-    #     j = j[0]['tabRenderer']['content']['sectionListRenderer']['contents'][0]
-    #     j = j['itemSectionRenderer']['contents'][0]['playlistVideoListRenderer']
-    #     playlist_id = j['playlistId']
-    #     videos_obj = j['contents']
-    #     videos = {}
-    #     num_available_videos = 0 # hidden or membership videos should not increment this
-    #     for video_obj in videos_obj:
-    #         if "playlistVideoRenderer" in video_obj.keys():
-    #             video_obj = video_obj['playlistVideoRenderer']
-    #             if self.__is_video_members_only(video_obj):
-    #                 #skip download and mention that this video is members only
-    #                 pass
-    #             num_available_videos = num_available_videos + 1
-    #             video_id = video_obj['videoId']
-    #             video_title = video_obj['title']['runs'][0]['text']
-    #             # length_text = video_obj['lengthText']['accessibility']['accessibilityData']['label']
-    #             length_text = video_obj['lengthText']['simpleText']
-    #             videos[video_id]  = {"video_title":video_title, "length":length_text}
-    #         else:
-    #             # case when you need to scroll down to get the rest of the playlist videos
-    #             print(video_obj.keys())
-    #             raise NeedToScrollToGetVideos
-
-    #     return {
-    #         "playlist_id": playlist_id,
-    #         "playlist_name": playlist_name,
-    #         "playlist_description":playlist_description,
-    #         NUMBERVIDEOSKEY: num_available_videos,
-    #         "videos": videos
-    #     }
-    
-    
-    def __extract_playlist_info_from_json_response(self, playlist_json:dict) -> dict:
+   
+    def __extract_playlist_info_from_json_payload(self, playlist_json:dict) -> dict:
         ''' takes a playlist json dict and outputs a dict like this:
         {
             "playlist_id":id,
@@ -112,7 +65,7 @@ class Response_Utils():
             "videos":{"id":{ "title":title, 'length':lengthText}, "id":{} ...}
         }
         NOTE that you can only get the 1st 100 video links, after that you need to 
-        scroll down to generate the remaining video links
+        scroll down to generate the remaining video links, this function doesnt not handle scrolling
         '''
         playlist_name = playlist_json['metadata']['playlistMetadataRenderer']['title']
         playlist_description = playlist_json['microformat']['microformatDataRenderer']['description']
@@ -128,6 +81,7 @@ class Response_Utils():
             videos[video_id] = video_info
 
 
+
         return {
             "playlist_id": playlist_id,
             "playlist_name": playlist_name,
@@ -136,6 +90,8 @@ class Response_Utils():
             "videos": videos
         }
     
+    def _extract_dynamicly_loaded_videos_from_playlist_post_response(self, post_response:dict) -> dict:
+        pass TODO
 
     def __is_video_members_only(self, video_playlist_renderer:dict)->bool:
         pass
@@ -159,7 +115,7 @@ class Response_Utils():
             return json.loads(json_str)
             
 
-    def __extract_playlists_from_json_response(self, json_respone_var:dict) -> list[dict]:
+    def __extract_playlists_from_json_payload(self, json_respone_var:dict) -> list[dict]:
         '''Takes the response of a GET requests on youtube.com/channel/playlists, and spits out the playlists data'''
         j = json_respone_var['contents']['twoColumnBrowseResultsRenderer']['tabs']
         # currently (dec 6 -2021) there are two types 1. Created playlists and Saved playlists
