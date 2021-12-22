@@ -6,7 +6,7 @@ cwd = os.getcwd()
 # adding source code folder to the system path so I can import 
 sys.path.insert(0, cwd)
 
-from utils import NUMBERVIDEOSKEY, read_json_file
+from utils import Keys, read_json_file
 import unittest
 from response_utils import Response_Utils
 from unittest import mock
@@ -25,7 +25,7 @@ class TestDownloader(unittest.TestCase):
 
 		titles = []
 		for p in playlists:
-			titles.append(p['title'])
+			titles.append(p[Keys.PLAYLIST_NAME])
 			
 		assert all_titles == titles, "didn't download all playlist titles"
 		assert len(playlists) == num_videos, "didn't get all playlists"
@@ -38,7 +38,7 @@ class TestDownloader(unittest.TestCase):
 		expected_json = read_json_file(cwd + "/tests/fixtures/get_response/playlists/payload.json")
 		assert type(json_dict) == dict, "the type is not a dictionary"
 		assert "contents" in json_dict.keys(), "json_dict doesn't have the proper first key"
-		assert expected_json == json_dict, "extract json doesnt match expected json"
+		assert expected_json == json_dict, "extract json doesn't match expected json"
 
 	def test_extract_json_from_playlist_id_get_response(self)-> None:
 		get_resp_file = cwd + "/tests/fixtures/get_response/playlist?list=id/full_response"
@@ -48,9 +48,9 @@ class TestDownloader(unittest.TestCase):
 		expected_json = read_json_file(cwd + "/tests/fixtures/get_response/playlist?list=id/payload.json")
 		assert type(json_dict) == dict, "the type is not a dictionary"
 		assert "contents" in json_dict.keys(), "json_dict doesn't have the proper first key"
-		assert expected_json.keys() == json_dict.keys(), "extract json doesnt match expected json"
+		assert expected_json.keys() == json_dict.keys(), "extract json doesn't match expected json"
 
-		# now repeat the test but with a playlist that doesnt have the horizontal scroll
+		# now repeat the test but with a playlist that doesn't have the horizontal scroll
 		get_resp_file = cwd + "/tests/fixtures/get_response/playlist?list=id/full_response2"
 		with open(get_resp_file, "r") as file:
 			get_request_response_html = file.read()
@@ -59,15 +59,6 @@ class TestDownloader(unittest.TestCase):
 		assert type(json_dict) == dict, "the type is not a dictionary"
 		assert "contents" in json_dict.keys(), "json_dict doesn't have the proper first key"
 		assert len(set(expected_json.keys())) == len(set(json_dict.keys())), "extract json doesnt match expected json"
-
-	def test_extract_videos_info_from_playlist(self)-> None:
-		from utils import json_value_extract,read_json_file
-		sample_json = read_json_file(cwd + "/tests/fixtures/get_response/playlist?list=id/payload.json")
-		# videos_info = json_value_extract(sample_json,"playlistVideoRenderer" )
-		playlist_id = json_value_extract(sample_json, 'playlistId')
-		
-
-
 
 if __name__ == '__main__':
     unittest.main()

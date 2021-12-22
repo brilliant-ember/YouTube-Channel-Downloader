@@ -1,12 +1,11 @@
 from __future__ import annotations # to support var types in older python versions
-from utils import NUMBERVIDEOSKEY, read_json_file, NeedToScrollDownError, json_value_extract
+from utils import Keys, read_json_file, NeedToScrollDownError, json_value_extract
 import re
 import json
 from requests import get
-from Custom_Exceptions import NeedToScrollToGetVideos
+
 
 parse_exception = Exception("Json object response has an unexpected format, did youtube change their json object structure or UI?")
-
 
 class Response_Utils():
     '''This class handeles processing of the responses from API requests'''
@@ -22,15 +21,6 @@ class Response_Utils():
             return r.text
         else:
             raise Exception("cant do GET request")
-
-    def get_playlist_info(self, playlist_url:str)->dict:
-        '''
-        NOT READY FOR USE, use scrapper instead. Doenst auto scroll down when we get beyond 100 videos
-        takes a playlist url like https://www.youtube.com/playlist?list=PLGhvWnPsCr59gKqzqmUQrSNwl484NPvQY and
-        returns that playlist info'''
-        resp = self.perform_get_request_text(playlist_url)
-        my_json = self.extract_json_from_specific_playlist_get_response(resp)
-        return (self.__extract_playlist_info_from_json_payload(my_json))
 
     def get_playlists_listing(self, playlists_url:str)->list[dict]:
         ''' 
@@ -67,7 +57,8 @@ class Response_Utils():
             
 
     def __extract_playlists_from_json_payload(self, json_respone_var:dict) -> list[dict]:
-        '''Takes the response of a GET requests on youtube.com/channel/playlists, and spits out the playlists data'''
+        '''Takes the response of a GET requests on youtube.com/channel/playlists, and spits out the playlists data
+        TODO use utils. json_key_finder to parse the json tree instead of manually doing it like here, look at the Playlist.py file for ex'''
         j = json_respone_var['contents']['twoColumnBrowseResultsRenderer']['tabs']
         # currently (dec 6 -2021) there are two types 1. Created playlists and Saved playlists
         created_playlists = j[2]['tabRenderer']['content']['sectionListRenderer']['contents'][0]
@@ -88,9 +79,9 @@ class Response_Utils():
             playlist_id = p['playlistId']
             video_count = int(p['videoCountShortText']['simpleText'])
             channel_created_playlists_metadata.append({
-                'title':title,
-                'playlist_id': playlist_id,
-                NUMBERVIDEOSKEY: video_count
+                Keys.PLAYLIST_NAME:title,
+                Keys.PLAYLIST_ID: playlist_id,
+                Keys.PLAYLIST_GROSS_VIDEOS_NUMBER: video_count
             })
 
         return channel_created_playlists_metadata
@@ -100,13 +91,3 @@ class Response_Utils():
 
 r = Response_Utils()
 p = "https://www.youtube.com/playlist?list=PL0o_zxa4K1BWYThyV4T2Allw6zY0jEumv"
-# j = r.get_playlist_info('https://www.youtube.com/playlist?list=PL0o_zxa4K1BWYThyV4T2Allw6zY0jEumv')
-# import utils
-# utils.over_write_json_file('tests/fixtures/downloaded/playlist_extracted_info.json',j)
-
-
-# url1= "https://www.youtube.com/playlist?list=PLpR68gbIfkKmrNp3yeVmZRyNR_Lb6XM5Q"
-# url2= "https://www.youtube.com/playlist?list=PLGhvWnPsCr59gKqzqmUQrSNwl484NPvQY"
-# j = get_playlist_info(url1)
-# over_write_json_file("b.json",j)
-# assert j["_number_of_videos"] == len(list(j['videos'].keys())), "length_not_equal didnt get all videos or something"

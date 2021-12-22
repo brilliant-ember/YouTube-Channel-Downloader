@@ -1,21 +1,39 @@
 from __future__ import annotations # to support var types in older python versions
 from datetime import datetime
 import json
+import enum
 
 ####### Constants
 
-# this referes to an object in the json files where we have 
-# "_update_dates": {
-#         "28/10/2021 09:09:51": "initial install",
-# 	  "20/11/2021 05:01:03": {"new_entries_since_last_backup": {added_stuff_since_last_backup}, "removed_entries_since_last_backup": {channel_removed_videos}"
-#     }
-# The DATEKEY is also used anywhere where we keep track of the date
-DATEKEY = "_update_dates" 
-NUMBERVIDEOSKEY = "_number_of_videos"
-NUMBER_OF_PLAYLISTS ="number_of_playlists"
 DATEFORMAT = "%d/%m/%Y %H:%M:%S"
-ALL_UPLOADS_PLAYLIST_NAME = "All Uploads"
-CREATED_PLAYLISTS = "Created playlists"
+
+#### Enumerates
+
+class Keys(str, enum.Enum):
+	'''A class to hold all the keys to be used in the program'''
+	# this refers to an object in the json files where we have 
+	# "update_dates": {
+	#         "28/10/2021 09:09:51": "initial install",
+	# 	  "20/11/2021 05:01:03": {"new_entries_since_last_backup": {added_stuff_since_last_backup}, "removed_entries_since_last_backup": {channel_removed_videos}"
+	#     }
+	# The DATEKEY is also used anywhere where we keep track of the date
+	DATEKEY = "update_dates" 
+	NUMBER_OF_PLAYLISTS ="number_of_playlists"
+	ALL_UPLOADS_PLAYLIST_NAME = "All Uploads"
+	CREATED_PLAYLISTS = "Created playlists"
+	NEED_TO_SCROLL_KEY= "continuationItemRenderer" # if playlist has this key, we need to scroll to get all videos
+	VIDEO_ELEMENT_KEY = "playlistVideoRenderer"
+	
+	PLAYLIST_ID = "playlist_id",
+	PLAYLIST_NAME = 'playlist_name'
+	PLAYLIST_DESCRIPTION = 'playlist_description'
+	PLAYLIST_URL = 'url'
+	PLAYLIST_GROSS_VIDEOS_NUMBER = 'gross_videos_number'
+	PLAYLIST_MEMBERS_ONLY_VIDEOS_NUMBER = 'members_only_videos_number'
+	PLAYLIST_AVAILABLE_VIDEOS_NUMBER = "available_videos_number"
+	PLAYLIST_AVAILABLE_VIDEOS = 'available_videos' 
+	PLAYLIST_MEMBERS_ONLY_VIDEOS = "members_only_videos"
+
 
 ##### functions
 

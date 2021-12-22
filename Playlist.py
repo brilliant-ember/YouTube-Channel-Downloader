@@ -1,10 +1,9 @@
 import response_utils
-from utils import json_value_extract, NUMBERVIDEOSKEY
-from Custom_Exceptions import NeedToScrollToGetVideos
+from utils import json_value_extract, Keys, get_now_date, generate_playlist_url
 
 
-NEED_TO_SCROLL_KEY= "continuationItemRenderer" # if playlist has this key, we need to scroll to get all videos
-VIDEO_ELEMENT_KEY = "playlistVideoRenderer"
+
+
 
 
 class Playlist():
@@ -28,23 +27,27 @@ class Playlist():
             "playlist_id":id,
             "playlist_name":name,
             "playlist_description":desc,
-            "number_of_videos":int,
-            gross_number_of_videos:int,
-            num_members_only_videos:int,
+            "url":str,
+            "num_available_videos":int,
+            "gross_number_of_videos":int,
+            "num_members_only_videos":int,
+            "update_dates":"right now date"
             "videos":{"id":{ "title":title, 'length':lengthText}, "id":{} ...}
         }
         '''
         return {
-            "playlist_id": self.playlist_id,
-            "playlist_name": self.playlist_name,
-            "playlist_description": self.playlist_description,
-            NUMBERVIDEOSKEY: self.num_available_videos,
-            "gross_number_of_videos":self.gross_number_of_videos,
-            "num_members_only_videos":self.self.num_members_only_videos,
-            "videos": self.available_videos
+            Keys.PLAYLIST_ID: self.playlist_id,
+            Keys.PLAYLIST_NAME: self.playlist_name,
+            Keys.PLAYLIST_DESCRIPTION: self.playlist_description,
+            Keys.PLAYLIST_URL:generate_playlist_url(self.playlist_id),
+            Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER: self.num_available_videos,
+            Keys.PLAYLIST_GROSS_VIDEOS_NUMBER:self.gross_number_of_videos,
+            Keys.PLAYLIST_MEMBERS_ONLY_VIDEOS_NUMBER:self.num_members_only_videos,
+            Keys.PLAYLIST_MEMBERS_ONLY_VIDEOS:self.members_only_videos,
+            Keys.DATEKEY: get_now_date(),
+            Keys.PLAYLIST_AVAILABLE_VIDEOS: self.available_videos
         }
 
-    # def get_playlist_info(self):
     def extract_playlist_info_from_json_payload(self, playlist_json:dict)->bool:
         '''Returns True if we need to scroll, False otherwise
          takes a playlist json dict from the response and updates the list data, it updates things like the videos, playlist name ..etc
@@ -58,7 +61,7 @@ class Playlist():
             self.playlist_id = json_value_extract(playlist_json, 'playlistId')[0] # we can also get it from the url
             self.__find_gross_number_of_videos(playlist_json)
 
-        videos_obj = json_value_extract(playlist_json, VIDEO_ELEMENT_KEY)
+        videos_obj = json_value_extract(playlist_json, Keys.VIDEO_ELEMENT_KEY)
         for video_obj in videos_obj:
             self.__extract_video_info_from_playlistVideoRenderer(video_obj)
             
@@ -77,8 +80,6 @@ class Playlist():
         '''some videos are only available to people who purchased a membership'''
         video_badge_style = json_value_extract(video_playlist_renderer, 'style')
         if len(video_badge_style)>0 and video_badge_style[0] == "BADGE_STYLE_TYPE_MEMBERS_ONLY":
-            print('Members only video')
-            
             return True
         return False
 
@@ -88,7 +89,6 @@ class Playlist():
         length_text = video_obj['lengthText']['simpleText']
         # length_text = video_obj['lengthText']['accessibility']['accessibilityData']['label']
         if self.__is_video_members_only(video_obj):
-            print(f'{video_title} is for members only video, skipping')
             self.members_only_videos[video_id] = {"video_title":video_title, "length":length_text}
             self.num_members_only_videos +=1
         else:
