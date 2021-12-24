@@ -17,18 +17,6 @@ class TestDownloader(unittest.TestCase):
 		self.response_utils = Response_Utils()
 		return super().setUp()
 
-	def test_extract_playlists_from_json_payload(self):
-		all_titles = ['Guest Videos', 'Guest Videos', 'Desktop Power supplies', 'Raspberry Pi Pico', 'Arduino Signal Generator', 'Viewer Projects', 'Building a guitar vacuum tube amplifier', 'FPGA', 'Desktop CNC', 'Arduino FPGA', 'Micsig STO1104c Oscilloscope', 'Multipurpose Lab Tool Build', 'Micro: Bit', 'Classic Circuits', 'Guest Video', 'BITX', 'Nixie Tubes', 'Amplifiers', 'Radio Related Stuff', 'Smart Home', 'PCB Design', 'Filters', '7400 Logic', '3D Printing', 'Particle Photon', 'Arduino and DC Motors', 'Blynk', 'esp32', 'Raspberry Pi', 'Oscillators']
-		num_videos = 30
-		j = read_json_file(cwd + "/tests/fixtures/get_response/playlists/payload.json")
-		playlists = self.response_utils._Response_Utils__extract_playlists_from_json_payload(j)
-
-		titles = []
-		for p in playlists:
-			titles.append(p[Keys.PLAYLIST_NAME])
-			
-		assert all_titles == titles, "didn't download all playlist titles"
-		assert len(playlists) == num_videos, "didn't get all playlists"
 	
 	def test_extract_json_from_channel_playlists_get_response(self)->None:
 		get_resp_file = cwd + "/tests/fixtures/get_response/playlists/full_response"

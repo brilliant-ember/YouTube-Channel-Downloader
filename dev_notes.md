@@ -24,7 +24,16 @@ right now it seems that adding `?view=1` to the tail of the url can give us the 
 
 examples : `youtube.com/c/MegwinTVOfficial/playlists` and `https://www.youtube.com/c/MegwinTVOfficial/playlists?view=1`
 
+
+When a dynamic content spinner shows up, it doesn't stay there for long. It has id='spinner' and it's inside a ghost card. When we extract the content we need to make sure that the page has fully loaded. Here is an example of the spinner while it's loading
+
+![]()
+<img src="screenshots/2021-12-23-21-49-06.png" style="max-height:300px"/>
+
+
 <br>
+
+---
 
 ### About all uploads playlist not truly having all videos
 

@@ -18,6 +18,10 @@ class TestDownloader(unittest.TestCase):
 		self.scrapper = Scrapper.ChannelScrapper(some_random_url, None, headless=False, debug_mode=True)
 		return super().setUp()
 
+	def tearDown(self) -> None:
+		self.scrapper.__del__()
+		return super().tearDown()
+
 	def test_get_playlist_info(self):
 		'''Note that I put hard coded numbers for the number of videos, these numbers can
 		change if the channel owner added or removed videos from the playlist'''
@@ -28,28 +32,53 @@ class TestDownloader(unittest.TestCase):
 
 		url = all_videos_are_available_playlist_without_scroll
 		json_dict = self.scrapper.get_playlist_info(url)
-		print(json_dict[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER])
 		assert type(json_dict) == dict, f"{url} didn't return a dictionary"
 		assert bool(json_dict), f"{url} returned an empty dictionary"
-		assert json_dict[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER] == 30 , f"{url} didn't extract all videos"
+		assert json_dict[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER] == 30 , f"{url} didn't extract all videos, expected 30 but found {json_dict[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER]}"
 		assert json_dict[Keys.PLAYLIST_MEMBERS_ONLY_VIDEOS_NUMBER] == 0, f"{url} didn't correctly get all members only videos"
 
 
 		url = playlist_with_membership_videos_and_scroll
 		json_dict = self.scrapper.get_playlist_info(url)
-		print(json_dict[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER])
 		assert type(json_dict) == dict, f"{url} didn't return a dictionary"
 		assert bool(json_dict), f"{url} returned an empty dictionary"
-		assert json_dict[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER] == 284 , f"{url} didn't extract all videos"
+		assert json_dict[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER] == 284 , f"{url} didn't extract all videos, expected 284 but found {json_dict[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER]}"
 		assert json_dict[Keys.PLAYLIST_MEMBERS_ONLY_VIDEOS_NUMBER] == 23, f"{url} didn't correctly get all members only videos"
 
 		url = playlist_with_hidden_videos
 		json_dict = self.scrapper.get_playlist_info(url)
 		assert type(json_dict) == dict, f"{url} didn't return a dictionary"
 		assert bool(json_dict), f"{url} returned an empty dictionary"
-		assert json_dict[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER] == 16 , f"{url} didn't extract all videos"
+		assert json_dict[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER] == 16 , f"{url} didn't extract all videos, expected 16 but found {json_dict[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER]}"
 		assert json_dict[Keys.PLAYLIST_MEMBERS_ONLY_VIDEOS_NUMBER] == 0, f"{url} didn't correctly get all members only videos"
 
+
+	def test_get_all_channel_playlists_info(self):
+		playlists_only_default_view_no_scroll = "https://www.youtube.com/c/3thestorm/playlists"
+		playlist_wrong_view_with_scroll = "https://www.youtube.com/c/MegwinTVOfficial/playlists"
+		playlist_correct_view_with_scroll = "https://www.youtube.com/c/learnelectronics/playlists?view=1"
+		extra_with_scroll = 'https://www.youtube.com/c/CrunchyrollCollection/playlists'
+
+		url = playlists_only_default_view_no_scroll
+		created_playlists = self.scrapper.get_all_channel_playlists_info(url)
+		num_playlists = len(created_playlists.keys())
+		assert num_playlists == 3, f"found {num_playlists} should have been 3,didn't get correct number of playlists for f {url}"
+
+		url = playlist_correct_view_with_scroll
+		created_playlists = self.scrapper.get_all_channel_playlists_info(url)
+		num_playlists = len(created_playlists.keys())
+		assert num_playlists == 40, f"found {num_playlists} should have been 40, didn't get correct number of playlists for f {url}"
+
+		url = extra_with_scroll
+		created_playlists = self.scrapper.get_all_channel_playlists_info(url)
+		num_playlists = len(created_playlists.keys())
+		assert num_playlists == 213, f"found {num_playlists} should have been 213, didn't get correct number of playlists for f {url}"
+
+		url = playlist_wrong_view_with_scroll
+		created_playlists = self.scrapper.get_all_channel_playlists_info(url)
+		num_playlists = len(created_playlists.keys())
+		print(num_playlists)
+		assert num_playlists == 241,f"found {num_playlists} should have been 241, didn't get correct number of playlists for f {url}"
 
 if __name__ == '__main__':
 	unittest.main()

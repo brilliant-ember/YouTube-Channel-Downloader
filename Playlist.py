@@ -1,16 +1,9 @@
-import response_utils
 from utils import json_value_extract, Keys, get_now_date, generate_playlist_url
-
-
-
-
-
 
 class Playlist():
     def __init__(self):
         # self.playlist_url = playlist_url
         self.playlist_videos = []
-        self.response_utils = response_utils.Response_Utils()
         self.gross_number_of_videos = 0
         self.num_available_videos = 0
         self.num_members_only_videos = 0
@@ -65,7 +58,7 @@ class Playlist():
         for video_obj in videos_obj:
             self.__extract_video_info_from_playlistVideoRenderer(video_obj)
             
-        need_to_scroll = json_value_extract(playlist_json, "continuationItemRenderer") # this exists if we need to scroll to get videos
+        need_to_scroll = json_value_extract(playlist_json, Keys.PLAYLIST_NEED_TO_SCROLL) # this exists if we need to scroll to get videos
         if len(need_to_scroll) != 0:
             return True
         return False
