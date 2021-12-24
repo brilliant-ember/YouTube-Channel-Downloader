@@ -1,6 +1,3 @@
-# this is a class implementation of the scarepper
-
-#pytube and selenium implementation
 
 from enum import unique
 import traceback
@@ -55,16 +52,16 @@ class ChannelScrapper():
 	def __del__(self):
 		self.driver.quit()
 	
-	def log(self, msg:str, level="info")-> None:
+	def log(self, msg:str, level="debug")-> None:
 		msg = "Scrapper_Log - " + msg
 		self.logger.log(msg, level=level)
 	
-	def get(self, url:str) -> None:
+	def get(self, url:str, force=False) -> None:
 		'''Go to a website if we are not already on it'''
 		self.current_scroll_height = 0
-		if self.driver.current_url != url:
+		if self.driver.current_url != url or force:
 			self.driver.get(url)
-			print("performed get request on url ", url)
+			self.log("performed get request on url ", url)
 
 	def get_channel_name(self)-> str:
 		id = 'channel-name'
@@ -98,14 +95,14 @@ class ChannelScrapper():
 		try:
 			# this will raise an NoSuchElementException if the spinner id elem is not there
 			self.driver.find_element_by_id(spinner_id).find_elements_by_class_name('active')
-			print('found dynamic content loading spinner...')
+			self.log('found dynamic content loading spinner...')
 			by = By.ID
 			locator = (by, spinner_id)
 			t = time.time()
 			# this will raise TimeoutException 
 			wait.until(EC.invisibility_of_element(locator))
 			t = time.time() - t
-			print(f"waited for dynamic content spinner to disappear for {t} seconds")
+			self.log(f"waited for dynamic content spinner to disappear for {t} seconds")
 		except (TimeoutException, NoSuchElementException):
 			# didn't find the spinner so all is good
 			pass
@@ -114,17 +111,16 @@ class ChannelScrapper():
 		'''gets all created playlists info from the channel given a url, 
 		doesn't include all uploads playlists, example url https://www.youtube.com/c/greatscottlab/playlists
 		'''
-		print('getting all channels created playlists for channel with url ', channel_playlists_url)
+		self.log('getting all channels created playlists for channel with url ', channel_playlists_url)
 		if not('?view=' in channel_playlists_url):
 			channel_playlists_url = channel_playlists_url + "?view=1"
+		# if a channel has only created playlists then it doesn't have ?view=x so it's fine if we don't have it in the req
 		response_utils = Response_Utils()
 		self.clear_stored_requests()
 		self.get(channel_playlists_url)
+		self.wait_for_page_load("playlist-thumbnails", type='id')
+
 		html_body = self._get_response_from_created_playlists_request(channel_playlists_url)
-		# if a channel has only created playlists then it doesn't have ?view=x so it's fine if we don't have it
-		# is_in_correct_view = response_utils.are_we_in_correct_view_for_created_playlists(html_body)
-		# if not is_in_correct_view:
-		# 	raise Exception("must be in the created playlists ?view=1")
 		body_json = response_utils.extract_json_from_channel_playlists_get_response(html_body)
 		channel = Channel()
 		need_to_scroll = channel.extract_all_playlists_from_a_playlists_category_json_response(body_json)
@@ -134,7 +130,7 @@ class ChannelScrapper():
 			self.__scroll_down_and_get_remaining_elements(html_body, channel)
 		all_pl = channel.created_playlists_metadata
 		num_playlists = len(all_pl.keys())
-		print(f"found {num_playlists} playlists for the channel ")
+		self.log(f"found {num_playlists} playlists for the channel ")
 
 		return all_pl
 
@@ -147,10 +143,10 @@ class ChannelScrapper():
 			response = request.response
 			content_type = request.headers.get_content_type()
 			is_content_text = 'text' in content_type
+			breakpoint()
 			if "/playlists" in request.url and response and response.body and is_content_text:
 				return self._decode_response_body(response)
-				
-		raise Exception("Didn't find the requested url")
+		raise Exception("Didn't find excpected request URL ", request_url)
 
 	def get_all_uploads_playlist_url(self, videos_tab_link:str)->str:
 		''' takes the link that you get after you press videos in the channel tab, example link input
@@ -169,6 +165,7 @@ class ChannelScrapper():
 		'''works for selenium-wire only'''
 		del self.driver.requests
 		self.wait_random_time() # wait a second so we don't accidentally clear something that's happening right now
+	
 	def  _decode_response_body(self,  response):
 		decoded = decode(response.body, response.headers.get('Content-Encoding', 'identity'))
 		decoded = str(decoded, 'utf-8', errors='replace')
@@ -191,7 +188,8 @@ class ChannelScrapper():
 		example playlist url https://www.youtube.com/playlist?list=UU6mIxFTvXkWQVEHPsEdflzQ'''
 		self.clear_stored_requests()
 		self.get(playlist_url)
-		print("getting all videos for playlist: ", playlist_url)
+		self.wait_for_page_load("ytd-playlist-video-renderer")
+		self.log("getting all videos for playlist: ", playlist_url)
 		html_body = self._get_response_from_playlist_request(playlist_url)
 		response_utils = Response_Utils()
 		my_json = response_utils.extract_json_from_specific_playlist_get_response(html_body)
@@ -203,7 +201,7 @@ class ChannelScrapper():
 			self.__scroll_down_and_get_remaining_elements(html_body, playlist_handler)
 		videos = playlist_handler.get_playlist_info_as_dict()
 		num_videos = videos[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER]
-		print(f"found {num_videos} videos for playlist {playlist_url}")
+		self.log(f"found {num_videos} videos for playlist {playlist_url}")
 		return videos
 
 	def __scroll_down_and_get_remaining_elements(self, html_get_response:str, object_to_scrape:Union[Playlist, Channel]) -> None:
@@ -232,7 +230,7 @@ class ChannelScrapper():
 			for req in self.driver.requests:
 				response = req.response
 				if api_key in req.url and "/browse" in req.url and response and response.body:
-					print("The request url we're inspecting is: ", req.url)
+					self.log("The request url we're inspecting is: ", req.url)
 					decoded_resp_body = self._decode_response_body(response)
 					decoded_resp_body = json.loads(decoded_resp_body)
 					keep_scrolling = extracting_function(decoded_resp_body)
@@ -283,7 +281,7 @@ class ChannelScrapper():
 	def scroll_down(self, scroll_offset = 700):
 		"""A method for scrolling the page."""
 		self.current_scroll_height += self.current_scroll_height + scroll_offset
-		print("scrolling down")
+		self.log("scrolling down")
 		self.driver.execute_script(f"window.scrollTo(0, {self.current_scroll_height});")
 		time.sleep(self.scroll_wait)
 

@@ -21,7 +21,7 @@ class Log:
 			logging.critical(msg)
 		else:
 			print ("unknown level, will default to info")
-			logging.warn("Passed error level is not good, will use info level to print next log entry")
+			logging.warning("Passed error level is not good, will use info level to print next log entry")
 			logging.info(msg)
 
 		if print_log:

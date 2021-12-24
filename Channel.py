@@ -14,7 +14,7 @@ class Channel:
         found_new_playlists = 0
         for p in playlists:
             title = p['title']['runs'][0]['text']
-            playlist_id = p['playlistId']
+            playlist_id = p['playlistId'] # this is the playlist id in the youtube json, don't use the Keys enum!
             video_count = p['videoCountShortText']['simpleText']
             video_count = int(video_count.replace(',','')) # remove comma if we have 4,999 or somthing
 
@@ -25,7 +25,7 @@ class Channel:
                 }
                 found_new_playlists +=1
 
-        print("number of playlists to add", found_new_playlists)
+        # print("number of playlists to add", found_new_playlists)
         need_to_scroll = len(json_value_extract(playlists_category, Keys.CHANNEL_PLAYLISTS_NEED_TO_SCROLL)) > 0
         return need_to_scroll
 

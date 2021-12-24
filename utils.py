@@ -37,6 +37,10 @@ class Keys(str, enum.Enum):
 	PLAYLIST_AVAILABLE_VIDEOS = 'available_videos' 
 	PLAYLIST_MEMBERS_ONLY_VIDEOS = "members_only_videos"
 
+	CHANNEL_ABOUT = "about"
+
+	URL='url'
+
 
 ##### functions
 

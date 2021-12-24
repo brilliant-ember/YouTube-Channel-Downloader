@@ -25,7 +25,7 @@ class TestDownloader(unittest.TestCase):
 		need_to_scroll = channel.extract_all_playlists_from_a_playlists_category_json_response(j)
 		playlists = channel.created_playlists_metadata
 		titles = []
-		for p in playlists:
+		for p in playlists.values():
 			titles.append(p[Keys.PLAYLIST_NAME])
 			
 		assert all_titles == titles, "didn't download all playlist titles"
@@ -40,7 +40,7 @@ class TestDownloader(unittest.TestCase):
 		need_to_scroll = channel.extract_all_playlists_from_a_playlists_category_json_response(j)
 		playlists = channel.created_playlists_metadata
 		titles = []
-		for p in playlists:
+		for p in playlists.values():
 			titles.append(p[Keys.PLAYLIST_NAME])
 			
 		assert all_titles == titles, "didn't download all playlist titles"

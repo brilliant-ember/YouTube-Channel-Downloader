@@ -26,8 +26,8 @@ from pytube.extract import channel_name, publish_date
 from pytube.request import get, head
 from Scrapper import ChannelScrapper
 from Logger import Log
-from utils import get_now_date, compare_dicts, get_days_between_dates, over_write_json_file,read_json_file,CREATED_PLAYLISTS,NUMBER_OF_PLAYLISTS ,DATEKEY, NUMBERVIDEOSKEY, ALL_UPLOADS_PLAYLIST_NAME, remove_slash_from_strings
-from  response_utils import Response_Utils
+from Custom_Exceptions import VideoExistsError
+from utils import get_now_date, compare_dicts, get_days_between_dates, over_write_json_file,read_json_file, Keys, remove_slash_from_strings
 import os
 from sys import stdout, exit
 from signal import signal, SIGINT
@@ -64,7 +64,8 @@ class Downloader():
 		## init urls
 		self.channel_url = channel_url
 		self.all_uploads_url = channel_url + "/videos" # example https://www.youtube.com/user/FireSymphoney/videos
-		self.playlists_url = channel_url + "/playlists" # https://www.youtube.com/user/FireSymphoney/playlists
+		# ?view=1 makes us go to created playlists most of the time
+		self.playlists_url = channel_url + "/playlists?view=1" # https://www.youtube.com/user/FireSymphoney/playlists
 		self.about_url = channel_url + "/about"
 		####
 		
@@ -74,7 +75,6 @@ class Downloader():
 		self.allow_download = True
 		self.max_update_lag = max_update_lag # scrape the channel if the current json record is more than x days old, put zero to scrape the channel once regardless of the freshness of the record
 		self.num_created_video_dirs = 0
-		self.response_utils = Response_Utils()
 		
 		self.log(f'Bismillah! initialized a Download for channel {self.channel_name} at {self.channel_path}', print_log=True)
 		
@@ -113,7 +113,6 @@ class Downloader():
 			self.log(msg, "warn")
 			self.log(msg2, "warn")
 			self.delete_file(self.current_video_output_path)
-
 
 		self.logger.exit()
 		exit(0)
@@ -165,15 +164,15 @@ class Downloader():
 				json_dict = read_json_file(json_file_path) # this is the old file
 				# keep a record of what videos the channel uploaded and what videos got removed
 				# this also records removed playlists and new playlists
-				last_update = json_dict.pop(DATEKEY) # the new dict will not have this, so remove it while we compare
+				last_update = json_dict.pop(Keys.DATEKEY) # the new dict will not have this, so remove it while we compare
 				added_stuff_since_last_backup, channel_removed_stuff = compare_dicts(json_dict, playlist_info )
-				json_dict[DATEKEY] = last_update # return it back after comparing both dicts
+				json_dict[Keys.DATEKEY] = last_update # return it back after comparing both dicts
 				json_dict = {**playlist_info, **json_dict} # merge the two dicts, if there's overlapping keys, then use the one from the old file ie json_dict
-				json_dict[DATEKEY][str(get_now_date())] = {"new_entries_since_last_backup": added_stuff_since_last_backup, "removed_entries_since_last_backup":channel_removed_stuff}
-				json_dict[NUMBERVIDEOSKEY] = max(playlist_info[NUMBERVIDEOSKEY],json_dict[NUMBERVIDEOSKEY]  ) # since we are incrementing videos we want the total number of videos we have locally
+				json_dict[Keys.DATEKEY][str(get_now_date())] = {"new_entries_since_last_backup": added_stuff_since_last_backup, "removed_entries_since_last_backup":channel_removed_stuff}
+				json_dict[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER] = max(playlist_info[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER],json_dict[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER]  ) # since we are incrementing videos we want the total number of videos we have locally
 				over_write_json_file(json_file_path, json_dict)
 			else:
-				playlist_info[DATEKEY] = {get_now_date(): "initial install"}
+				playlist_info[Keys.DATEKEY] = {get_now_date(): "initial install"}
 				over_write_json_file(json_file_path, playlist_info)
 			self.log(f'Wrote the json file for {playlist_name} at {self.playlists_path}')
 
@@ -258,16 +257,17 @@ class Downloader():
 	def download_all_videos_from_channel(self)-> None:
 		self.log("Attempting to download All Uploads playlist")
 		all_videos_info = self.get_all_uploads_playlist_data()
-		num_vids = all_videos_info.pop(NUMBERVIDEOSKEY) # since we don't wanna iterate over the number of videos
-		all_videos_info.pop(DATEKEY) # since we dont wanna iterate over the date
+		num_vids = all_videos_info.pop(Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER) # since we don't wanna iterate over the number of videos
+		all_videos_info.pop(Keys.DATEKEY) # since we don't wanna iterate over the date
 		all_urls_list = list(all_videos_info.values())
+		all_urls_list = [p[Keys.PLAYLIST_URL] for p in all_urls_list]
 		did_finish = self.download_url_list(all_urls_list)
 		
 		if did_finish:
 			self.log(f"Finished going over all channel videos ---- {self.all_uploads_url}")
 			self.log("God bless you!")
 		else:
-			self.log(f"There was a problem and I couldnt download all the videos... total downloads should be {num_vids} for {self.all_uploads_url}")
+			self.log(f"There was a problem and I couldn't download all the videos... total downloads should be {num_vids} for {self.all_uploads_url}")
 		self.finish_download_and_show_stats()
 
 	def finish_download_and_show_stats(self):
@@ -305,48 +305,46 @@ class Downloader():
 
 
 
-	def write_all_playlists_info(self)-> None:
-		''' writes a json entry for each playlist which included all the videos in that playlist, this doesnt include the All Uploads playlist
+	def write_all_channel_playlists_info(self)-> None:
+		''' writes a json entry for each playlist which included all the videos in that playlist, this doesn't include the All Uploads playlist
 		to do that use scrapper.get_all_uploads_playlist_url(self.all_uploads_url), which is already used in  download_all_videos_from_channel(self)'''
 		self.log("Getting all of the playlists information...", print_log=True)
-		all_playlists_info = self.scrapper.get_playlists_info(self.playlists_url)
+		all_playlists_info = self.scrapper.get_all_channel_playlists_info(self.playlists_url)
 		all_playlists_info.pop('num_playlists')
 		for playlist in all_playlists_info.keys():
 			self.write_playlist_info_json(playlist, all_playlists_info[playlist])
 
 	def get_all_uploads_playlist_data(self) ->  dict :
-		'''checks if we already have the links we need as a json file, if we do will read that json file and return a dict, otherwise will scrape the channel website then write the json file and finally return the channel info dict'''
+		'''checks if we already have the links we need as a json file, if we do will read that json file and return a dict,
+		 otherwise will scrape the channel website then write the json file and finally return the channel info dict'''
 		try:
 			if self.should_update_json_record():
 				# scrape the website in this case
-				self.log(f"Current json is too old, will scrape the channel and create a new one")
+				self.log(f"Current json is too old, will scrape the channel and create a new json")
 				self.write_channel_info()
-				all_videos_playlist_url = self.scrapper.get_all_uploads_playlist_url(self.all_uploads_url)
-				self.write_all_playlists_info()
-				# now we get all uploads playlist, note we should keep it in this order
-				# writing all uploads playlists should happen last, as we need that to determine if we downloaded all playlists
-				num_vids, all_videos_info = self.scrapper.get_video_info_from_playlist(all_videos_playlist_url)
-				all_videos_info["videos"] = all_videos_info # abstract the videos info behind a key called videos
-				all_videos_info[NUMBERVIDEOSKEY] = num_vids
-				all_videos_info[DATEKEY] = get_now_date()
-				self.write_playlist_info_json(ALL_UPLOADS_PLAYLIST_NAME , all_videos_info) 
-				return all_videos_info
+				all_uploads_playlist_url = self.scrapper.get_all_uploads_playlist_url(self.all_uploads_url)
+				self.write_all_channel_playlists_info()
+				output = self.scrapper.get_playlist_info(all_uploads_playlist_url)
+				self.write_playlist_info_json(Keys.ALL_UPLOADS_PLAYLIST_NAME , output) 
+				return output
 			else:
 				# we shouldn't scrape the channel website, instead read the record directly from json
 				self.log(f"Using current json record of the channel since it is still not too old")
-				json_file_path = os.path.join(self.playlists_path, f"{ALL_UPLOADS_PLAYLIST_NAME}.json")
+				json_file_path = os.path.join(self.playlists_path, f"{Keys.ALL_UPLOADS_PLAYLIST_NAME}.json")
 				json_dict = read_json_file(json_file_path)
 				return json_dict
 		except Exception as e:
 			self.handle_exception(e)
 
 	def write_channel_info(self) -> None:
-		channel_info = self.scrapper.get_channel_about(self.about_url)
-		all_playlists = self.response_utils.get_playlists_listing(self.playlists_url)
-		channel_info["url"] = self.channel_url
-		channel_info[DATEKEY] = get_now_date()
-		channel_info[CREATED_PLAYLISTS] = all_playlists
-		channel_info[NUMBER_OF_PLAYLISTS] = len(all_playlists)
+		channel_info = {}
+		channel_about = self.scrapper.get_channel_about(self.about_url)
+		all_playlists = self.scrapper.get_all_channel_playlists_info(self.channel_url)
+		channel_info[Keys.CHANNEL_ABOUT] = channel_about
+		channel_info[Keys.URL] = self.channel_url
+		channel_info[Keys.DATEKEY] = get_now_date()
+		channel_info[Keys.NUMBER_OF_PLAYLISTS] = len(all_playlists.keys())
+		channel_info[Keys.CREATED_PLAYLISTS] = all_playlists
 
 		try:
 			json_file_path = os.path.join(self.info_path, "channel_info.json")
@@ -366,7 +364,7 @@ class Downloader():
 				return True 
 			
 			# all uploads playlist is downloaded last, so if it doesn't exist means that we didn't fetch all playlists and need to update
-			all_uploads_file_path = os.path.join(self.playlists_path, f"{ALL_UPLOADS_PLAYLIST_NAME}.json")
+			all_uploads_file_path = os.path.join(self.playlists_path, f"{Keys.ALL_UPLOADS_PLAYLIST_NAME}.json")
 			file_exists = os.path.isfile(all_uploads_file_path)
 			if not file_exists:
 				return True
@@ -375,7 +373,7 @@ class Downloader():
 				if (".json" in pl):
 					pl = os.path.join(self.playlists_path, pl)
 					json_dict = read_json_file(pl)
-					date = list(json_dict[DATEKEY].keys())[-1] #example: '03/11/2021 05:46:32'
+					date = list(json_dict[Keys.DATEKEY].keys())[-1] #example: '03/11/2021 05:46:32'
 					date_now = get_now_date()
 					days_delta = get_days_between_dates(date, date_now)
 					if days_delta > self.max_update_lag:
@@ -421,11 +419,7 @@ class Downloader():
 				self.log("Clean up task, will delete {}".format(dir_path))
 				self.delete_file(dir_path)
 
-		
 
-
-		
-	
 	def did_download_fail(self, video_dir:str):
 		'''Returns True if video download failed and needs to be repeated, otherwise returns '''
 		for dir_path, _, dir_files in os.walk(video_dir):
@@ -443,21 +437,6 @@ class Downloader():
 			if not is_there_mp4_file:
 				return True
 		return False
-		
-
-			
-class VideoExistsError(Exception):
-# a custom exception if the video file already exists
-     pass
-
-
-video = "https://www.youtube.com/watch?v=isutYMU2HHU"
-channel = "https://www.youtube.com/c/greatscottlab"
-# d = Downloader(channel)
-# d.write_channel_info()
-# # d.download_video(video)
-# # d.download_all_videos_from_channel()
-
 
 
 
