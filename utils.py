@@ -9,8 +9,18 @@ DATEFORMAT = "%d/%m/%Y %H:%M:%S"
 
 #### Enumerates
 
+class YtElms(str, enum.Enum):
+	'''Youtube Elements: a class to hold identifiers from youtube response, it holds youtube tag names, or JSON keys'''
+	PLAYLIST_NEED_TO_SCROLL= "continuationItemRenderer" # if playlist has this key, we need to scroll to get all videos
+	VIDEO_ELEMENT_KEY = "playlistVideoRenderer"
+	CHANNEL_PLAYLISTS_NEED_TO_SCROLL = "continuationCommand" # on all created playlists for example
+	SINGLE_CHANNEL_PLAYLIST_CARD = 'gridPlaylistRenderer' # a single playlist card has this key
+	ALL_UPLOADS_VIDEO_ITEM = 'gridVideoRenderer'
+	PLAYLIST_ID = 'playlistId'
+	VIDEO_ID = 'videoId'
+
 class Keys(str, enum.Enum):
-	'''A class to hold all the keys to be used in the program, it also holds constants even though it's not supposed to TODO'''
+	'''A class to hold all the keys to be used in the program'''
 	# this refers to an object in the json files where we have 
 	# "update_dates": {
 	#         "28/10/2021 09:09:51": "initial install",
@@ -21,12 +31,6 @@ class Keys(str, enum.Enum):
 	NUMBER_OF_PLAYLISTS ="number_of_playlists"
 	ALL_UPLOADS_PLAYLIST_NAME = "All Uploads"
 	CREATED_PLAYLISTS = "Created playlists"
-	PLAYLIST_NEED_TO_SCROLL= "continuationItemRenderer" # if playlist has this key, we need to scroll to get all videos
-	VIDEO_ELEMENT_KEY = "playlistVideoRenderer"
-
-	CHANNEL_PLAYLISTS_NEED_TO_SCROLL = "continuationCommand" # on all created playlists for example
-	SINGLE_CHANNEL_PLAYLIST_CARD = 'gridPlaylistRenderer' # a single playlist card has this key
-	
 	PLAYLIST_ID = "playlist_id",
 	PLAYLIST_NAME = 'playlist_name'
 	PLAYLIST_DESCRIPTION = 'playlist_description'
@@ -40,6 +44,7 @@ class Keys(str, enum.Enum):
 	CHANNEL_ABOUT = "about"
 
 	URL='url'
+	VIDEO_NAME = "video_title"
 
 
 ##### functions

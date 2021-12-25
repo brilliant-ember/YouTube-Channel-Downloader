@@ -172,7 +172,6 @@ class Downloader():
 				json_dict[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER] = max(playlist_info[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER],json_dict[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER]  ) # since we are incrementing videos we want the total number of videos we have locally
 				over_write_json_file(json_file_path, json_dict)
 			else:
-				playlist_info[Keys.DATEKEY] = {get_now_date(): "initial install"}
 				over_write_json_file(json_file_path, playlist_info)
 			self.log(f'Wrote the json file for {playlist_name} at {self.playlists_path}')
 
@@ -259,8 +258,8 @@ class Downloader():
 		all_videos_info = self.get_all_uploads_playlist_data()
 		num_vids = all_videos_info.pop(Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER) # since we don't wanna iterate over the number of videos
 		all_videos_info.pop(Keys.DATEKEY) # since we don't wanna iterate over the date
-		all_urls_list = list(all_videos_info.values())
-		all_urls_list = [p[Keys.PLAYLIST_URL] for p in all_urls_list]
+
+		all_urls_list = [v[Keys.URL] for v in all_videos_info.values()]
 		did_finish = self.download_url_list(all_urls_list)
 		
 		if did_finish:
@@ -282,7 +281,6 @@ class Downloader():
 		if num_failed_downloads > 0:
 			self.log(f"{num_failed_downloads} videos failed to download, will try again")
 			self.handle_failed_downloads()
-
 
 		
 	def handle_failed_downloads(self):
@@ -307,12 +305,13 @@ class Downloader():
 
 	def write_all_channel_playlists_info(self)-> None:
 		''' writes a json entry for each playlist which included all the videos in that playlist, this doesn't include the All Uploads playlist
-		to do that use scrapper.get_all_uploads_playlist_url(self.all_uploads_url), which is already used in  download_all_videos_from_channel(self)'''
+		note below is obsolete, /videos has all videos we need now, no need to extract the special playlist for all-uploads
+		'''
 		self.log("Getting all of the playlists information...", print_log=True)
 		all_playlists_info = self.scrapper.get_all_channel_playlists_info(self.playlists_url)
-		all_playlists_info.pop('num_playlists')
+		# all_playlists_info.pop('num_playlists')
 		for playlist in all_playlists_info.keys():
-			self.write_playlist_info_json(playlist, all_playlists_info[playlist])
+			self.write_playlist_info_json(playlist[Keys.PLAYLIST_NAME], all_playlists_info[playlist])
 
 	def get_all_uploads_playlist_data(self) ->  dict :
 		'''checks if we already have the links we need as a json file, if we do will read that json file and return a dict,
@@ -322,9 +321,12 @@ class Downloader():
 				# scrape the website in this case
 				self.log(f"Current json is too old, will scrape the channel and create a new json")
 				self.write_channel_info()
-				all_uploads_playlist_url = self.scrapper.get_all_uploads_playlist_url(self.all_uploads_url)
-				self.write_all_channel_playlists_info()
-				output = self.scrapper.get_playlist_info(all_uploads_playlist_url)
+				self.write_all_channel_playlists_info() # record all the playlists of the channel
+
+				output = self.scrapper.get_all_uploads_info_for_channel(self.all_uploads_url)
+				output[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER] = len(output.keys())
+				output[Keys.DATEKEY] = {get_now_date(): "initial install"}
+
 				self.write_playlist_info_json(Keys.ALL_UPLOADS_PLAYLIST_NAME , output) 
 				return output
 			else:
@@ -339,7 +341,7 @@ class Downloader():
 	def write_channel_info(self) -> None:
 		channel_info = {}
 		channel_about = self.scrapper.get_channel_about(self.about_url)
-		all_playlists = self.scrapper.get_all_channel_playlists_info(self.channel_url)
+		all_playlists = self.scrapper.get_all_channel_playlists_info(self.playlists_url)
 		channel_info[Keys.CHANNEL_ABOUT] = channel_about
 		channel_info[Keys.URL] = self.channel_url
 		channel_info[Keys.DATEKEY] = get_now_date()

@@ -29,12 +29,17 @@ class Response_Utils():
 		json_str = json_str[len(remove_substr):-1]
 		return json.loads(json_str)
 
-
 	def extract_json_from_channel_playlists_get_response(self, html_get_response:str)->dict:
-			''' gets the json object in the response of a request like
-			youtube.com/c/channelName/playlists'''
-			regex_pattern = r"(var ytInitialData = )[\s|\S]*}]}}}" #matches the variable that contains the json object of interest
-			json_str = re.search(regex_pattern, html_get_response).group(0)
-			remove_substr = "var ytInitialData = "
-			json_str = json_str[len(remove_substr):]
-			return json.loads(json_str)
+		''' gets the json object in the response of a request like
+		youtube.com/c/channelName/playlists'''
+		regex_pattern = r"(var ytInitialData = )[\s|\S]*}]}}}" #matches the variable that contains the json object of interest
+		json_str = re.search(regex_pattern, html_get_response).group(0)
+		remove_substr = "var ytInitialData = "
+		json_str = json_str[len(remove_substr):]
+		return json.loads(json_str)
+
+	def extract_json_from_all_uploads_get_response(self, html_get_response:str) -> dict:
+		regex_pattern = r"(?<=var ytInitialData = )[\s|\S]*\s*}\s*\]\s*}\s*}\s*}\s*;"
+		json_str = re.search(regex_pattern, html_get_response).group(0)
+		json_str = json_str[:-1] # remove final semicolon
+		return json.loads(json_str)

@@ -11,11 +11,14 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 import Scrapper
+from Logger import Log
 
 class TestDownloader(unittest.TestCase):
 	def setUp(self) -> None:
 		some_random_url = "https://www.youtube.com/c/greatscottlab"
-		self.scrapper = Scrapper.ChannelScrapper(some_random_url, None, headless=False, debug_mode=True)
+		log_file_path = os.path.join(cwd, "logfile.txt")
+		logger = Log(log_file_path)
+		self.scrapper = Scrapper.ChannelScrapper(some_random_url, logger, headless=False, test_mode=True)
 		return super().setUp()
 
 	def tearDown(self) -> None:
@@ -77,7 +80,6 @@ class TestDownloader(unittest.TestCase):
 		url = playlist_wrong_view_with_scroll
 		created_playlists = self.scrapper.get_all_channel_playlists_info(url)
 		num_playlists = len(created_playlists.keys())
-		print(num_playlists)
 		assert num_playlists == 241,f"found {num_playlists} should have been 241, didn't get correct number of playlists for f {url}"
 
 if __name__ == '__main__':

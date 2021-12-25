@@ -1,4 +1,4 @@
-from utils import json_value_extract, Keys, get_now_date, generate_playlist_url
+from utils import json_value_extract, Keys, get_now_date, generate_playlist_url, YtElms
 
 class Playlist():
     def __init__(self):
@@ -54,11 +54,11 @@ class Playlist():
             self.playlist_id = json_value_extract(playlist_json, 'playlistId')[0] # we can also get it from the url
             self.__find_gross_number_of_videos(playlist_json)
 
-        videos_obj = json_value_extract(playlist_json, Keys.VIDEO_ELEMENT_KEY)
+        videos_obj = json_value_extract(playlist_json, YtElms.VIDEO_ELEMENT_KEY)
         for video_obj in videos_obj:
             self.__extract_video_info_from_playlistVideoRenderer(video_obj)
             
-        need_to_scroll = json_value_extract(playlist_json, Keys.PLAYLIST_NEED_TO_SCROLL) # this exists if we need to scroll to get videos
+        need_to_scroll = json_value_extract(playlist_json, YtElms.PLAYLIST_NEED_TO_SCROLL) # this exists if we need to scroll to get videos
         if len(need_to_scroll) != 0:
             return True
         return False

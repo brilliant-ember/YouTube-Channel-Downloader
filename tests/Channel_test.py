@@ -16,7 +16,7 @@ class TestDownloader(unittest.TestCase):
 	def setUp(self) -> None:
 		return super().setUp()
 
-	def test_extract_playlists_from_json_payload(self):
+	def test_extract_all_playlists_from_a_playlists_category_json_response(self):
 		# a playlist where we need to scroll
 		channel = Channel()
 		all_titles = ['バトルofダンディ（BOD）', 'お父さんは心配症', 'Hallo BABY', 'オレ料理正直ランキング', 'キャンプ場にログハウスをDIY - MCV', 'ゾンビ肉シリーズ', 'VEMANJI - 自販機ゲーム - 指定された様々な自販機の食べ物を食い尽くし、不思議な世界から無事に戻る事は出来るのか？【ベマンジ】', 'THE DRUNK  - ミッションをこなしルーレットにより指定された大量のビールを飲み打ち上げ会場へのヒントを手に入れろ！【ジ・ドランク】', '世界一運の悪い男が挑むスーパーアクション Die easy｜A Good Day to Die Hard （ダイイージー）', '干支チェンジ | Remake Chinese Zodiac', '【WRG】ワールドレートゲーム', '12/2018★365シリーズ一気見だぜ！', '11/2018★365シリーズ一気見だぜ', '食べ歩きかるた山手線の細道', '10/2018★365シリーズ一気見だぜ！', '09/2018★365シリーズ一気見だぜ！', '08/2018★365シリーズ一気見だぜ！', '長編10分以上の動画！！暇つぶしに最適', '07/2018★365シリーズ一気見だぜ！', '06/2018★365シリーズ一気見だぜ！', '10次会するまで帰れま10！！！', '大食いぶらり旅', '笑ってはいけない', '05/2018★365シリーズ一気見だぜ！', '04/2018★365シリーズ一気見だぜ！', '03/2018★365シリーズ一気見だぜ！', '本格ピザ窯作り！', '02/2018★365シリーズ一気見だぜ！', '01/2018★365シリーズ一気見！', '12/2017★365シリーズ一気見！']
@@ -32,7 +32,7 @@ class TestDownloader(unittest.TestCase):
 		assert len(playlists) == num_videos, "didn't get all playlists"
 		assert need_to_scroll, "didn't know that we should have scrolled"
 
-		# a playlist where we don't need to scroll
+		# a playlist where we don't need to scroll, we actually do but the json doesn't have it
 		channel = Channel()
 		all_titles = ['Testing Circuits I found on the Internet!', 'Q&A', 'DIY or Buy', '3D Printing', 'Fix It!', 'Electronics Projects', 'HACKED!', 'VS', 'Electronic Basics']
 		num_videos = 9
@@ -46,6 +46,23 @@ class TestDownloader(unittest.TestCase):
 		assert all_titles == titles, "didn't download all playlist titles"
 		assert len(playlists) == num_videos, "didn't get all playlists"
 		assert need_to_scroll == False, "Thought that we should scroll when we shouldn't"
+
+
+	def test_extract_videos_from_all_uploads_json_response(self):
+		channel=Channel()
+		j = read_json_file(cwd + "/tests/fixtures/get_response/channel[slash]videos/no_scroll_all_uploads.json")
+		need_to_scroll = channel.extract_videos_from_all_uploads_json_response(j)
+		videos = channel.all_uploads_videos
+		assert len(videos.keys()) == 12, "didn't get all videos"
+		assert need_to_scroll == False, "Thought that we should scroll when we shouldn't"
+
+		channel=Channel()
+		j = read_json_file(cwd + "/tests/fixtures/get_response/channel[slash]videos/all_uploads_for_channel_payload.json")
+		need_to_scroll = channel.extract_videos_from_all_uploads_json_response(j)
+		videos = channel.all_uploads_videos
+		assert len(videos.keys()) == 30, "didn't get all videos"
+		assert need_to_scroll == True, "Thought that we shouldn't scroll when we should have"
+
 
 
 if __name__ == '__main__':

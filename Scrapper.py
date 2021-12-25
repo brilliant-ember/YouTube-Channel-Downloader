@@ -25,10 +25,11 @@ from random import randint, random
 
 
 class ChannelScrapper():
-	def __init__(self, channel_url: str, logger:Log, headless = True, default_wait = 1, debug_mode=False):
+	def __init__(self, channel_url: str, logger:Log, headless = True, default_wait = 1, test_mode=False):
 		self.default_wait = default_wait
 		self.scroll_wait = default_wait/2
 		self.channel_url = channel_url
+		self.test_mode = test_mode
 
 		seleniumwire_options = {
 			'request_storage': 'memory',
@@ -45,14 +46,15 @@ class ChannelScrapper():
 
 		self.initial_scroll_height = 0 # initial scroll height
 		self.current_scroll_height = 0
-		if not debug_mode:
-			self.logger = logger
+		self.logger = logger
+		if not test_mode:
 			self.get_channel_name()
 
 	def __del__(self):
 		self.driver.quit()
 	
 	def log(self, msg:str, level="debug")-> None:
+
 		msg = "Scrapper_Log - " + msg
 		self.logger.log(msg, level=level)
 	
@@ -61,7 +63,7 @@ class ChannelScrapper():
 		self.current_scroll_height = 0
 		if self.driver.current_url != url or force:
 			self.driver.get(url)
-			self.log("performed get request on url ", url)
+			self.log(f"performed get request on url {url}")
 
 	def get_channel_name(self)-> str:
 		id = 'channel-name'
@@ -87,7 +89,8 @@ class ChannelScrapper():
 			wait.until(EC.element_to_be_clickable((by, name)))
 		except TimeoutException:
 			# sometimes it errors even if the element is clickable
-			pass 
+			pass
+		self.wait_random_time()
 
 	def wait_for_dynamic_content_loading_spinner_to_disappear(self):
 		spinner_id = "spinner" # you can also use id ghost-cards
@@ -111,7 +114,7 @@ class ChannelScrapper():
 		'''gets all created playlists info from the channel given a url, 
 		doesn't include all uploads playlists, example url https://www.youtube.com/c/greatscottlab/playlists
 		'''
-		self.log('getting all channels created playlists for channel with url ', channel_playlists_url)
+		self.log('getting all channel\'s created playlists for channel with url ', channel_playlists_url)
 		if not('?view=' in channel_playlists_url):
 			channel_playlists_url = channel_playlists_url + "?view=1"
 		# if a channel has only created playlists then it doesn't have ?view=x so it's fine if we don't have it in the req
@@ -120,7 +123,7 @@ class ChannelScrapper():
 		self.get(channel_playlists_url)
 		self.wait_for_page_load("playlist-thumbnails", type='id')
 
-		html_body = self._get_response_from_created_playlists_request(channel_playlists_url)
+		html_body = self._get_response_from_created_playlists_or_all_uploads_request(channel_playlists_url)
 		body_json = response_utils.extract_json_from_channel_playlists_get_response(html_body)
 		channel = Channel()
 		need_to_scroll = channel.extract_all_playlists_from_a_playlists_category_json_response(body_json)
@@ -135,31 +138,65 @@ class ChannelScrapper():
 		return all_pl
 
 
-	def _get_response_from_created_playlists_request(self,request_url:str) -> str:
+	def _get_response_from_created_playlists_or_all_uploads_request(self,request_url:str, is_all_uploads=False) -> str:
 		''' goes over the requests stored in the buffer, and returns the response of 
-			the request_url for a specific playlist'''
+			the request_url for a specific playlist, if you want all uploads then pass is_all_uploads=True and its going to look at channel/videos instead of a specific playlist'''
+
+		if is_all_uploads:
+			url_path = '/videos'
+		else:
+			url_path = '/playlists'
+
 		for i in range(len(self.driver.requests)):
 			request = self.driver.requests[i]
 			response = request.response
 			content_type = request.headers.get_content_type()
 			is_content_text = 'text' in content_type
-			breakpoint()
-			if "/playlists" in request.url and response and response.body and is_content_text:
+			if url_path in request.url and response and response.body and is_content_text:
 				return self._decode_response_body(response)
 		raise Exception("Didn't find excpected request URL ", request_url)
 
-	def get_all_uploads_playlist_url(self, videos_tab_link:str)->str:
-		''' takes the link that you get after you press videos in the channel tab, example link input
-		https://www.youtube.com/user/FireSymphoney/videos'''
-		self.get(videos_tab_link)
-		self.wait_for_page_load('play-all', "id")
-		try:
-			elem = self.driver.find_element_by_id('play-all').find_element_by_class_name('yt-simple-endpoint')
-			all_uploads_url = elem.get_attribute('href')
-			all_uploads_url = all_uploads_url.split('&')[0] # get rid of the query
-		except NoSuchElementException: #sometimes youtube doesn't have the play all button
-			raise Exception("Could not find play all button, it may work if you try again")
-		return all_uploads_url
+
+	def get_all_uploads_info_for_channel(self, channel_videos_url:str):
+		'''Gets all video info in the "all uploads" link of the channel, example url https://www.youtube.com/c/greatscottlab/videos
+		note that this gets the all-uploads playlist only, it doesn't get the unlisted videos that are only viewable inside the specific playlist that unlisted video is in '''
+
+		self.log('Scrapping channel/videos for url  {channel_videos_url}')
+		
+		response_utils = Response_Utils()
+		self.clear_stored_requests()
+		self.get(channel_videos_url)
+		self.wait_for_page_load("ytd-grid-video-renderer", type='tag')
+
+		html_body = self._get_response_from_created_playlists_or_all_uploads_request(channel_videos_url, is_all_uploads=True)
+		body_json = response_utils.extract_json_from_all_uploads_get_response(html_body)
+		channel = Channel()
+		need_to_scroll = channel.extract_videos_from_all_uploads_json_response(body_json)
+		if need_to_scroll:
+			self.clear_stored_requests()
+			self.scroll_down()
+			self.__scroll_down_and_get_remaining_elements(html_body, channel)
+
+		video_info = channel.all_uploads_videos
+		num = len(video_info.keys())
+		self.log(f"found {num} videos in all uploads for the channel ")
+
+		return video_info
+	
+	# obsolete, youtube changed their UI so this is no longer relevent
+	# def get_all_uploads_playlist_url(self, videos_tab_link:str)->str:
+	# 	''' takes the link that you get after you press videos in the channel tab, example link input
+	# 	https://www.youtube.com/user/FireSymphoney/videos'''
+	# 	self.get(videos_tab_link)
+	# 	self.wait_for_page_load('play-all', "id")
+	# 	try:
+	# 		elem = self.driver.find_element_by_id('play-all').find_element_by_class_name('yt-simple-endpoint')
+	# 		all_uploads_url = elem.get_attribute('href')
+	# 		all_uploads_url = all_uploads_url.split('&')[0] # get rid of the query
+	# 	except NoSuchElementException: #sometimes youtube doesn't have the play all button
+	# 		breakpoint()
+	# 		raise Exception("Could not find play all button, it may work if you try again")
+	# 	return all_uploads_url
 
 	def clear_stored_requests(self):
 		'''works for selenium-wire only'''
@@ -183,13 +220,13 @@ class ChannelScrapper():
 				
 		raise Exception("Didn't find the requested url")
 
-	def get_playlist_info(self, playlist_url)->dict:
+	def get_playlist_info(self, playlist_url) -> dict:
 		'''takes playlist url, returns the number of videos in that playlist and an object {"video1Title": "video1url", video2:url ... and so on}
 		example playlist url https://www.youtube.com/playlist?list=UU6mIxFTvXkWQVEHPsEdflzQ'''
 		self.clear_stored_requests()
 		self.get(playlist_url)
 		self.wait_for_page_load("ytd-playlist-video-renderer")
-		self.log("getting all videos for playlist: ", playlist_url)
+		self.log(f"getting all videos for playlist:  {playlist_url}")
 		html_body = self._get_response_from_playlist_request(playlist_url)
 		response_utils = Response_Utils()
 		my_json = response_utils.extract_json_from_specific_playlist_get_response(html_body)
@@ -204,22 +241,27 @@ class ChannelScrapper():
 		self.log(f"found {num_videos} videos for playlist {playlist_url}")
 		return videos
 
-	def __scroll_down_and_get_remaining_elements(self, html_get_response:str, object_to_scrape:Union[Playlist, Channel]) -> None:
+	def __scroll_down_and_get_remaining_elements(self, html_get_response:str, object_to_scrape:Union[Playlist, Channel], all_uploads=False) -> None:
 		'''scrolls down to get remaining content that's created dynamically when you scroll, accepts either a playlist or channel object
 		ARGS: 
 			html_get_response:str -> The html text of the response body
 			object_to_scrape: either a Playlist or Channel -> do we want to extract dynamically created Playlists or Videos in a playlists
 							  if we want to get a specific playlist dynamic videos pass a Playlist object. If you want all the dynamically created
 							  playlists of a channel pass a Channel object
+			all_uploads: if you're scrapping the channel/videos url for all_uploaded videos, then you must set this to True and pass a Channel object
 		Returns:
 			None -> since we update the passed Playlist or Channel object no need to return anything
 		'''
 		if isinstance(object_to_scrape, Playlist):
 			extracting_function = object_to_scrape.extract_playlist_info_from_json_payload
+
+		elif all_uploads and isinstance(object_to_scrape,Channel):
+			extracting_function = object_to_scrape.extract_videos_from_all_uploads_json_response	
+
 		elif isinstance(object_to_scrape, Channel):
 			extracting_function = object_to_scrape.extract_all_playlists_from_a_playlists_category_json_response
 		else:
-			raise Exception('the object_to_scrape must be either a Playlist or a Channel')
+			raise Exception('The object_to_scrape must be either a Playlist or a Channel, are you scrapping all_uploads, if so set it to all_uploads=True')
 		
 		pattern = "(?<=\"INNERTUBE_API_KEY\":\")[\w]*(?=\",)*"
 		api_key = re.search(pattern, html_get_response).group(0)
@@ -227,18 +269,23 @@ class ChannelScrapper():
 		infinite_loop_safety = 100
 
 		while(keep_scrolling and infinite_loop_safety > 0):
+			infinite_loop_safety -=1
 			for req in self.driver.requests:
 				response = req.response
 				if api_key in req.url and "/browse" in req.url and response and response.body:
-					self.log("The request url we're inspecting is: ", req.url)
+					self.log(f"The request url we're inspecting is: {req.url}")
 					decoded_resp_body = self._decode_response_body(response)
 					decoded_resp_body = json.loads(decoded_resp_body)
 					keep_scrolling = extracting_function(decoded_resp_body)
+					infinite_loop_safety += 1
 									
 			self.clear_stored_requests()
 			self.scroll_down()
 			self.wait_random_time() # give the spinner a chance to appear
-			self.wait_for_dynamic_content_loading_spinner_to_disappear() 
+			self.wait_for_dynamic_content_loading_spinner_to_disappear()
+
+		if infinite_loop_safety <=0:
+			self.log("Warning triggered infinite loop safety", level="warn")
 
 
 	def get_channel_about(self, playlist_about_url:str)->dict:

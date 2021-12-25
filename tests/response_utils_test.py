@@ -46,7 +46,17 @@ class TestDownloader(unittest.TestCase):
 		expected_json = read_json_file(cwd + "/tests/fixtures/get_response/playlist?list=id/payload2.json")
 		assert type(json_dict) == dict, "the type is not a dictionary"
 		assert "contents" in json_dict.keys(), "json_dict doesn't have the proper first key"
-		assert len(set(expected_json.keys())) == len(set(json_dict.keys())), "extract json doesnt match expected json"
+		assert len(set(expected_json.keys())) == len(set(json_dict.keys())), "extract json doesn't match expected json"
+
+	def test_extract_json_from_all_uploads_get_response(self)->None:
+		get_resp_file = cwd + "/tests/fixtures/get_response/channel[slash]videos/all_uploads_for_channel.html"
+		with open(get_resp_file, "r") as file:
+			get_request_response_html = file.read()
+		json_dict = self.response_utils.extract_json_from_all_uploads_get_response(get_request_response_html)
+		expected_json = read_json_file(cwd + "/tests/fixtures/get_response/channel[slash]videos/all_uploads_for_channel_payload.json")
+		assert type(json_dict) == dict, "the type is not a dictionary"
+		assert "contents" in json_dict.keys(), "json_dict doesn't have the proper first key"
+		assert expected_json == json_dict, "extract json doesn't match expected json"
 
 if __name__ == '__main__':
     unittest.main()
