@@ -1,0 +1,923 @@
+{
+    "responseContext": {
+      "maxAgeSeconds": 300,
+      "serviceTrackingParams": [
+        {
+          "service": "GFEEDBACK",
+          "params": [
+            {
+              "key": "route",
+              "value": "channel.playlists"
+            },
+            {
+              "key": "is_casual",
+              "value": "false"
+            },
+            {
+              "key": "is_owner",
+              "value": "false"
+            },
+            {
+              "key": "is_monetization_enabled",
+              "value": "true"
+            },
+            {
+              "key": "num_shelves",
+              "value": "6+"
+            },
+            {
+              "key": "browse_id",
+              "value": "UCp_RW49IudjKEw_yal7tfFw"
+            },
+            {
+              "key": "logged_in",
+              "value": "0"
+            },
+            {
+              "key": "e",
+              "value": "24058380,24001373,1714250,23882685,24129402,23968386,24148481,24002922,23918597,24143428,24148864,24106839,24077266,24110902,24028143,24115641,24002025,24045476,24084439,24126016,24120819,23983296,23944779,24140247,39321475,24135236,24036948,9405991,24082662,23966208,24104858,24109690,24142470,24116735,23986019,24141079,24138442,24111165,24034168,23884386,24007790,24002022,24131399,24146886,24062268,24131025,24080738,24116717,23744176,24117475,24134152,23946420,24142941,24150972,23934970,24151518,23804281,24143789,24004644,24077241,23998056,24085811,24007246,24045475,24081713"
+            }
+          ]
+        },
+        {
+          "service": "GOOGLE_HELP",
+          "params": [
+            {
+              "key": "browse_id",
+              "value": "UCp_RW49IudjKEw_yal7tfFw"
+            }
+          ]
+        },
+        {
+          "service": "CSI",
+          "params": [
+            {
+              "key": "c",
+              "value": "WEB"
+            },
+            {
+              "key": "cver",
+              "value": "2.20211221.00.00"
+            },
+            {
+              "key": "yt_li",
+              "value": "0"
+            },
+            {
+              "key": "GetChannelPage_rid",
+              "value": "0x27ce1884bc7269aa"
+            }
+          ]
+        },
+        {
+          "service": "GUIDED_HELP",
+          "params": [
+            {
+              "key": "logged_in",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "service": "ECATCHER",
+          "params": [
+            {
+              "key": "client.version",
+              "value": "2.20211221"
+            },
+            {
+              "key": "client.name",
+              "value": "WEB"
+            },
+            {
+              "key": "client.fexp",
+              "value": "24058380,24001373,1714250,23882685,24129402,23968386,24148481,24002922,23918597,24143428,24148864,24106839,24077266,24110902,24028143,24115641,24002025,24045476,24084439,24126016,24120819,23983296,23944779,24140247,39321475,24135236,24036948,9405991,24082662,23966208,24104858,24109690,24142470,24116735,23986019,24141079,24138442,24111165,24034168,23884386,24007790,24002022,24131399,24146886,24062268,24131025,24080738,24116717,23744176,24117475,24134152,23946420,24142941,24150972,23934970,24151518,23804281,24143789,24004644,24077241,23998056,24085811,24007246,24045475,24081713"
+            }
+          ]
+        }
+      ],
+      "mainAppWebResponseContext": {
+        "loggedOut": true
+      },
+      "webResponseContextExtensionData": {
+        "hasDecorated": true
+      }
+    },
+    "trackingParams": "CAAQhGciEwi2-czo0Pj0AhVhiuUHHRTtAauCARoIABCEZyITCNiYrefQ-PQCFb2Z5Qcdl5UISg==",
+    "metadata": {
+      "channelMetadataRenderer": {
+        "title": "MEGWIN",
+        "description": "株式会社MEGWIN TV 代表取締役社長　関根剣\n\n２４時間エンドレス稼働する2.5次元ゲームを世界に広める夢を一緒に追える仲間募集\nまずはお話から　https://forms.gle/jZ3XezwdD8TzvHtF9\n\n\nBitStar専属クリエイター\nお仕事などのお問い合わせは下記までお願いします。\nhttps://bitstar.tokyo/contact/?inquiry=promotion",
+        "rssUrl": "https://www.youtube.com/feeds/videos.xml?channel_id=UCp_RW49IudjKEw_yal7tfFw",
+        "channelConversionUrl": "https://www.youtube.com/pagead/viewthroughconversion/962985656/?backend=innertube&cname=1&cver=2_20211221_00_00&data=backend%3Dinnertube%3Bcname%3D1%3Bcver%3D2_20211221_00_00%3Bptype%3Dcview%3Btype%3Dcview%3Butuid%3Dp_RW49IudjKEw_yal7tfFw&foc_id=p_RW49IudjKEw_yal7tfFw&label=followon_cvisit&ptype=cview&utuid=p_RW49IudjKEw_yal7tfFw",
+        "externalId": "UCp_RW49IudjKEw_yal7tfFw",
+        "keywords": "キャンプ MEGWIN CAMP お笑い 面白 japan 面白動画 バカ 馬鹿 fool 料理 旅 冒険 trip adventure アホ 痛い チャレンジ 爆笑 ゲーム コメディ 死ぬうま メグウィン DIY Cooking TIPS パパ お父さん",
+        "ownerUrls": [
+          "http://www.youtube.com/c/MegwinTVOfficial"
+        ],
+        "avatar": {
+          "thumbnails": [
+            {
+              "url": "https://yt3.ggpht.com/ytc/AKedOLRW4O8nKWjxFqPN8064G2pbn-oYyhHf3Ih7NUfw=s900-c-k-c0x00ffffff-no-rj",
+              "width": 900,
+              "height": 900
+            }
+          ]
+        },
+        "channelUrl": "https://www.youtube.com/channel/UCp_RW49IudjKEw_yal7tfFw",
+        "isFamilySafe": true,
+        "facebookProfileId": "megwintvofficial",
+        "availableCountryCodes": [
+          "RO",
+          "SM",
+          "CF",
+          "TD",
+          "GG",
+          "MK",
+          "SD",
+          "BA",
+          "LK",
+          "KR",
+          "GH",
+          "SZ",
+          "AZ",
+          "MO",
+          "SI",
+          "CO",
+          "ZA",
+          "JE",
+          "AL",
+          "IM",
+          "LS",
+          "TF",
+          "UG",
+          "GA",
+          "KN",
+          "AD",
+          "GI",
+          "GL",
+          "BJ",
+          "TK",
+          "ZW",
+          "ID",
+          "IS",
+          "TH",
+          "MA",
+          "MQ",
+          "SB",
+          "MG",
+          "BM",
+          "MV",
+          "GE",
+          "DO",
+          "PM",
+          "SE",
+          "AM",
+          "GD",
+          "IT",
+          "YE",
+          "DK",
+          "AF",
+          "BL",
+          "UY",
+          "CX",
+          "HT",
+          "TZ",
+          "SL",
+          "AO",
+          "MX",
+          "CM",
+          "GM",
+          "EE",
+          "RS",
+          "GR",
+          "GN",
+          "BV",
+          "BF",
+          "IE",
+          "LC",
+          "ME",
+          "KM",
+          "IN",
+          "PF",
+          "FR",
+          "ET",
+          "DE",
+          "UZ",
+          "KE",
+          "MD",
+          "SA",
+          "KY",
+          "TR",
+          "LI",
+          "AW",
+          "CA",
+          "MN",
+          "TT",
+          "PA",
+          "SO",
+          "YT",
+          "PH",
+          "PS",
+          "ES",
+          "SS",
+          "ER",
+          "MP",
+          "WS",
+          "NZ",
+          "HN",
+          "MR",
+          "MU",
+          "PL",
+          "PE",
+          "NL",
+          "BZ",
+          "CL",
+          "UM",
+          "BS",
+          "VN",
+          "KG",
+          "DJ",
+          "CC",
+          "HM",
+          "LT",
+          "PT",
+          "EH",
+          "ZM",
+          "BB",
+          "MM",
+          "TM",
+          "VA",
+          "TC",
+          "MS",
+          "VC",
+          "CU",
+          "PK",
+          "MZ",
+          "AE",
+          "AG",
+          "AS",
+          "BO",
+          "AR",
+          "IL",
+          "BR",
+          "KP",
+          "NR",
+          "BY",
+          "ST",
+          "OM",
+          "SN",
+          "LB",
+          "KZ",
+          "BN",
+          "FI",
+          "BE",
+          "TV",
+          "NO",
+          "CK",
+          "TW",
+          "BG",
+          "UA",
+          "CY",
+          "BW",
+          "HK",
+          "MT",
+          "BI",
+          "CD",
+          "GS",
+          "GY",
+          "MF",
+          "SY",
+          "US",
+          "LY",
+          "GQ",
+          "GU",
+          "PY",
+          "LV",
+          "ML",
+          "AQ",
+          "BH",
+          "RE",
+          "SV",
+          "WF",
+          "GW",
+          "DM",
+          "AX",
+          "MC",
+          "CI",
+          "NG",
+          "NF",
+          "FM",
+          "SH",
+          "CR",
+          "CV",
+          "NE",
+          "PR",
+          "SK",
+          "TN",
+          "KI",
+          "TL",
+          "DZ",
+          "FO",
+          "FK",
+          "GB",
+          "VE",
+          "SX",
+          "GF",
+          "AU",
+          "JP",
+          "VU",
+          "LU",
+          "BT",
+          "NC",
+          "LA",
+          "RW",
+          "MW",
+          "KH",
+          "SC",
+          "JM",
+          "MH",
+          "PG",
+          "HR",
+          "NA",
+          "SG",
+          "AT",
+          "CH",
+          "NI",
+          "CN",
+          "CZ",
+          "FJ",
+          "GT",
+          "CW",
+          "HU",
+          "IQ",
+          "IO",
+          "MY",
+          "NP",
+          "RU",
+          "BQ",
+          "BD",
+          "PW",
+          "VI",
+          "EC",
+          "PN",
+          "EG",
+          "JO",
+          "QA",
+          "IR",
+          "VG",
+          "LR",
+          "KW",
+          "CG",
+          "AI",
+          "TO",
+          "GP",
+          "NU",
+          "SR",
+          "TG",
+          "TJ",
+          "SJ"
+        ],
+        "androidDeepLink": "android-app://com.google.android.youtube/http/www.youtube.com/channel/UCp_RW49IudjKEw_yal7tfFw",
+        "androidAppindexingLink": "android-app://com.google.android.youtube/http/www.youtube.com/channel/UCp_RW49IudjKEw_yal7tfFw",
+        "iosAppindexingLink": "ios-app://544007664/vnd.youtube/www.youtube.com/channel/UCp_RW49IudjKEw_yal7tfFw",
+        "vanityChannelUrl": "http://www.youtube.com/c/MegwinTVOfficial"
+      }
+    },
+    "microformat": {
+      "microformatDataRenderer": {
+        "urlCanonical": "https://www.youtube.com/channel/UCp_RW49IudjKEw_yal7tfFw",
+        "title": "MEGWIN",
+        "description": "株式会社MEGWIN TV 代表取締役社長 関根剣 ２４時間エンドレス稼働する2.5次元ゲームを世界に広める夢を一緒に追える仲間募集 まずはお話から https://forms.gle/jZ3XezwdD8TzvHtF9 BitStar専属クリエイター お仕事などのお問い合わせは下記までお願いします。 https...",
+        "thumbnail": {
+          "thumbnails": [
+            {
+              "url": "https://yt3.ggpht.com/ytc/AKedOLRW4O8nKWjxFqPN8064G2pbn-oYyhHf3Ih7NUfw=s200-c-k-c0x00ffffff-no-rj?days_since_epoch=18984",
+              "width": 200,
+              "height": 200
+            }
+          ]
+        },
+        "siteName": "YouTube",
+        "appName": "YouTube",
+        "androidPackage": "com.google.android.youtube",
+        "iosAppStoreId": "544007664",
+        "iosAppArguments": "https://www.youtube.com/channel/UCp_RW49IudjKEw_yal7tfFw",
+        "ogType": "yt-fb-app:channel",
+        "urlApplinksWeb": "https://www.youtube.com/channel/UCp_RW49IudjKEw_yal7tfFw?feature=applinks",
+        "urlApplinksIos": "vnd.youtube://www.youtube.com/channel/UCp_RW49IudjKEw_yal7tfFw?feature=applinks",
+        "urlApplinksAndroid": "vnd.youtube://www.youtube.com/channel/UCp_RW49IudjKEw_yal7tfFw?feature=applinks",
+        "urlTwitterIos": "vnd.youtube://www.youtube.com/channel/UCp_RW49IudjKEw_yal7tfFw?feature=twitter-deep-link",
+        "urlTwitterAndroid": "vnd.youtube://www.youtube.com/channel/UCp_RW49IudjKEw_yal7tfFw?feature=twitter-deep-link",
+        "twitterCardType": "summary",
+        "twitterSiteHandle": "@YouTube",
+        "schemaDotOrgType": "http://schema.org/http://schema.org/YoutubeChannelV2",
+        "noindex": false,
+        "unlisted": false,
+        "familySafe": true,
+        "tags": [
+          "キャンプ",
+          "MEGWIN",
+          "CAMP",
+          "お笑い",
+          "面白",
+          "japan",
+          "面白動画",
+          "バカ",
+          "馬鹿",
+          "fool",
+          "料理",
+          "旅",
+          "冒険",
+          "trip",
+          "adventure",
+          "アホ",
+          "痛い",
+          "チャレンジ",
+          "爆笑",
+          "ゲーム",
+          "コメディ",
+          "死ぬうま",
+          "メグウィン",
+          "DIY",
+          "Cooking",
+          "TIPS",
+          "パパ",
+          "お父さん"
+        ],
+        "availableCountries": [
+          "RO",
+          "SM",
+          "CF",
+          "TD",
+          "GG",
+          "MK",
+          "SD",
+          "BA",
+          "LK",
+          "KR",
+          "GH",
+          "SZ",
+          "AZ",
+          "MO",
+          "SI",
+          "CO",
+          "ZA",
+          "JE",
+          "AL",
+          "IM",
+          "LS",
+          "TF",
+          "UG",
+          "GA",
+          "KN",
+          "AD",
+          "GI",
+          "GL",
+          "BJ",
+          "TK",
+          "ZW",
+          "ID",
+          "IS",
+          "TH",
+          "MA",
+          "MQ",
+          "SB",
+          "MG",
+          "BM",
+          "MV",
+          "GE",
+          "DO",
+          "PM",
+          "SE",
+          "AM",
+          "GD",
+          "IT",
+          "YE",
+          "DK",
+          "AF",
+          "BL",
+          "UY",
+          "CX",
+          "HT",
+          "TZ",
+          "SL",
+          "AO",
+          "MX",
+          "CM",
+          "GM",
+          "EE",
+          "RS",
+          "GR",
+          "GN",
+          "BV",
+          "BF",
+          "IE",
+          "LC",
+          "ME",
+          "KM",
+          "IN",
+          "PF",
+          "FR",
+          "ET",
+          "DE",
+          "UZ",
+          "KE",
+          "MD",
+          "SA",
+          "KY",
+          "TR",
+          "LI",
+          "AW",
+          "CA",
+          "MN",
+          "TT",
+          "PA",
+          "SO",
+          "YT",
+          "PH",
+          "PS",
+          "ES",
+          "SS",
+          "ER",
+          "MP",
+          "WS",
+          "NZ",
+          "HN",
+          "MR",
+          "MU",
+          "PL",
+          "PE",
+          "NL",
+          "BZ",
+          "CL",
+          "UM",
+          "BS",
+          "VN",
+          "KG",
+          "DJ",
+          "CC",
+          "HM",
+          "LT",
+          "PT",
+          "EH",
+          "ZM",
+          "BB",
+          "MM",
+          "TM",
+          "VA",
+          "TC",
+          "MS",
+          "VC",
+          "CU",
+          "PK",
+          "MZ",
+          "AE",
+          "AG",
+          "AS",
+          "BO",
+          "AR",
+          "IL",
+          "BR",
+          "KP",
+          "NR",
+          "BY",
+          "ST",
+          "OM",
+          "SN",
+          "LB",
+          "KZ",
+          "BN",
+          "FI",
+          "BE",
+          "TV",
+          "NO",
+          "CK",
+          "TW",
+          "BG",
+          "UA",
+          "CY",
+          "BW",
+          "HK",
+          "MT",
+          "BI",
+          "CD",
+          "GS",
+          "GY",
+          "MF",
+          "SY",
+          "US",
+          "LY",
+          "GQ",
+          "GU",
+          "PY",
+          "LV",
+          "ML",
+          "AQ",
+          "BH",
+          "RE",
+          "SV",
+          "WF",
+          "GW",
+          "DM",
+          "AX",
+          "MC",
+          "CI",
+          "NG",
+          "NF",
+          "FM",
+          "SH",
+          "CR",
+          "CV",
+          "NE",
+          "PR",
+          "SK",
+          "TN",
+          "KI",
+          "TL",
+          "DZ",
+          "FO",
+          "FK",
+          "GB",
+          "VE",
+          "SX",
+          "GF",
+          "AU",
+          "JP",
+          "VU",
+          "LU",
+          "BT",
+          "NC",
+          "LA",
+          "RW",
+          "MW",
+          "KH",
+          "SC",
+          "JM",
+          "MH",
+          "PG",
+          "HR",
+          "NA",
+          "SG",
+          "AT",
+          "CH",
+          "NI",
+          "CN",
+          "CZ",
+          "FJ",
+          "GT",
+          "CW",
+          "HU",
+          "IQ",
+          "IO",
+          "MY",
+          "NP",
+          "RU",
+          "BQ",
+          "BD",
+          "PW",
+          "VI",
+          "EC",
+          "PN",
+          "EG",
+          "JO",
+          "QA",
+          "IR",
+          "VG",
+          "LR",
+          "KW",
+          "CG",
+          "AI",
+          "TO",
+          "GP",
+          "NU",
+          "SR",
+          "TG",
+          "TJ",
+          "SJ"
+        ],
+        "linkAlternates": [
+          {
+            "hrefUrl": "https://m.youtube.com/channel/UCp_RW49IudjKEw_yal7tfFw"
+          },
+          {
+            "hrefUrl": "android-app://com.google.android.youtube/http/youtube.com/channel/UCp_RW49IudjKEw_yal7tfFw"
+          },
+          {
+            "hrefUrl": "ios-app://544007664/http/youtube.com/channel/UCp_RW49IudjKEw_yal7tfFw"
+          }
+        ]
+      }
+    },
+    "onResponseReceivedActions": [
+      {
+        "clickTrackingParams": "CAAQhGciEwi2-czo0Pj0AhVhiuUHHRTtAas=",
+        "appendContinuationItemsAction": {
+          "continuationItems": [
+            {
+              "gridPlaylistRenderer": {
+                "playlistId": "PL8E1FAE411CE5E00C",
+                "thumbnail": {
+                  "thumbnails": [
+                    {
+                      "url": "https://i.ytimg.com/vi/cdvnJCkKoqU/hqdefault.jpg?sqp=-oaymwEXCOADEI4CSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLA3OoUqfOZqQXAJJkRjVhOyNzV-Qw",
+                      "width": 480,
+                      "height": 270
+                    }
+                  ]
+                },
+                "title": {
+                  "runs": [
+                    {
+                      "text": "レトルトカレー王への道",
+                      "navigationEndpoint": {
+                        "clickTrackingParams": "CAEQljUYASITCLb5zOjQ-PQCFWGK5QcdFO0BqzIGZy1oaWdoWhhVQ3BfUlc0OUl1ZGpLRXdfeWFsN3RmRneaAQUQ8jgYaA==",
+                        "commandMetadata": {
+                          "webCommandMetadata": {
+                            "url": "/watch?v=cdvnJCkKoqU&list=PL8E1FAE411CE5E00C",
+                            "webPageType": "WEB_PAGE_TYPE_WATCH",
+                            "rootVe": 3832
+                          }
+                        },
+                        "watchEndpoint": {
+                          "videoId": "cdvnJCkKoqU",
+                          "playlistId": "PL8E1FAE411CE5E00C",
+                          "params": "OAI%3D",
+                          "loggingContext": {
+                            "vssLoggingContext": {
+                              "serializedContextData": "GhJQTDhFMUZBRTQxMUNFNUUwMEM%3D"
+                            }
+                          },
+                          "watchEndpointSupportedOnesieConfig": {
+                            "html5PlaybackOnesieConfig": {
+                              "commonConfig": {
+                                "url": "https://rr2---sn-tt1e7n7e.googlevideo.com/initplayback?source=youtube&orc=1&oeis=1&c=WEB&oad=3200&ovd=3200&oaad=11000&oavd=11000&ocs=700&oewis=1&oputc=1&ofpcc=1&msp=1&odeak=1&odepv=1&osfc=1&id=71dbe724290aa2a5&ip=127.0.0.1&initcwndbps=2032500&mt=1640217909&oweuc="
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "videoCountText": {
+                  "runs": [
+                    {
+                      "text": "60"
+                    },
+                    {
+                      "text": " videos"
+                    }
+                  ]
+                },
+                "navigationEndpoint": {
+                  "clickTrackingParams": "CAEQljUYASITCLb5zOjQ-PQCFWGK5QcdFO0BqzIGZy1oaWdoWhhVQ3BfUlc0OUl1ZGpLRXdfeWFsN3RmRneaAQUQ8jgYaA==",
+                  "commandMetadata": {
+                    "webCommandMetadata": {
+                      "url": "/watch?v=cdvnJCkKoqU&list=PL8E1FAE411CE5E00C",
+                      "webPageType": "WEB_PAGE_TYPE_WATCH",
+                      "rootVe": 3832
+                    }
+                  },
+                  "watchEndpoint": {
+                    "videoId": "cdvnJCkKoqU",
+                    "playlistId": "PL8E1FAE411CE5E00C",
+                    "params": "OAI%3D",
+                    "loggingContext": {
+                      "vssLoggingContext": {
+                        "serializedContextData": "GhJQTDhFMUZBRTQxMUNFNUUwMEM%3D"
+                      }
+                    },
+                    "watchEndpointSupportedOnesieConfig": {
+                      "html5PlaybackOnesieConfig": {
+                        "commonConfig": {
+                          "url": "https://rr2---sn-tt1e7n7e.googlevideo.com/initplayback?source=youtube&orc=1&oeis=1&c=WEB&oad=3200&ovd=3200&oaad=11000&oavd=11000&ocs=700&oewis=1&oputc=1&ofpcc=1&msp=1&odeak=1&odepv=1&osfc=1&id=71dbe724290aa2a5&ip=127.0.0.1&initcwndbps=2032500&mt=1640217909&oweuc="
+                        }
+                      }
+                    }
+                  }
+                },
+                "videoCountShortText": {
+                  "simpleText": "60"
+                },
+                "trackingParams": "CAEQljUYASITCLb5zOjQ-PQCFWGK5QcdFO0Bqw==",
+                "sidebarThumbnails": [
+                  {
+                    "thumbnails": [
+                      {
+                        "url": "https://i.ytimg.com/vi/L0H7htmoqHU/default.jpg",
+                        "width": 43,
+                        "height": 20
+                      }
+                    ]
+                  },
+                  {
+                    "thumbnails": [
+                      {
+                        "url": "https://i.ytimg.com/vi/WPToxs61wDA/default.jpg",
+                        "width": 43,
+                        "height": 20
+                      }
+                    ]
+                  },
+                  {
+                    "thumbnails": [
+                      {
+                        "url": "https://i.ytimg.com/vi/YJHhCH430eE/default.jpg",
+                        "width": 43,
+                        "height": 20
+                      }
+                    ]
+                  }
+                ],
+                "thumbnailText": {
+                  "runs": [
+                    {
+                      "text": "60",
+                      "bold": true
+                    },
+                    {
+                      "text": " videos"
+                    }
+                  ]
+                },
+                "thumbnailRenderer": {
+                  "playlistVideoThumbnailRenderer": {
+                    "thumbnail": {
+                      "thumbnails": [
+                        {
+                          "url": "https://i.ytimg.com/vi/YJHhCH430eE/hqdefault.jpg?sqp=-oaymwEXCOADEI4CSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLDn5V_VWsoEWTxwAaSNY8PVzXcRKw",
+                          "width": 480,
+                          "height": 270
+                        }
+                      ]
+                    }
+                  }
+                },
+                "thumbnailOverlays": [
+                  {
+                    "thumbnailOverlaySidePanelRenderer": {
+                      "text": {
+                        "simpleText": "60"
+                      },
+                      "icon": {
+                        "iconType": "PLAYLISTS"
+                      }
+                    }
+                  },
+                  {
+                    "thumbnailOverlayHoverTextRenderer": {
+                      "text": {
+                        "runs": [
+                          {
+                            "text": "Play all"
+                          }
+                        ]
+                      },
+                      "icon": {
+                        "iconType": "PLAY_ALL"
+                      }
+                    }
+                  },
+                  {
+                    "thumbnailOverlayNowPlayingRenderer": {
+                      "text": {
+                        "runs": [
+                          {
+                            "text": "Now playing"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ],
+                "viewPlaylistText": {
+                  "runs": [
+                    {
+                      "text": "View full playlist",
+                      "navigationEndpoint": {
+                        "clickTrackingParams": "CAEQljUYASITCLb5zOjQ-PQCFWGK5QcdFO0BqzIGZy1oaWdo",
+                        "commandMetadata": {
+                          "webCommandMetadata": {
+                            "url": "/playlist?list=PL8E1FAE411CE5E00C",
+                            "webPageType": "WEB_PAGE_TYPE_PLAYLIST",
+                            "rootVe": 5754,
+                            "apiUrl": "/youtubei/v1/browse"
+                          }
+                        },
+                        "browseEndpoint": {
+                          "browseId": "VLPL8E1FAE411CE5E00C"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "targetId": "browse-feedUCp_RW49IudjKEw_yal7tfFwplaylists104"
+        }
+      }
+    ]
+  }
+  

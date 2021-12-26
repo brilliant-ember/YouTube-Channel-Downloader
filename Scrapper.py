@@ -1,10 +1,9 @@
-# this is a class implementation of the scarepper
-
-#pytube and selenium implementation
 
 from enum import unique
 import traceback
-from selenium import webdriver
+# from selenium import webdriver
+from seleniumwire import webdriver
+from seleniumwire.utils import decode
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -13,37 +12,58 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from Logger import Log
 import time
 import pdb
+import utils
+from utils import json_value_extract, Keys
+from response_utils import Response_Utils
+
+from Playlist import Playlist
+from Channel import Channel
+import re
+import json
+from typing import Union
+from random import randint, random
 
 
 class ChannelScrapper():
-	def __init__(self, channel_url: str, logger:Log, headless = True, default_wait = 1):
+	def __init__(self, channel_url: str, logger:Log, headless = True, default_wait = 1, test_mode=False):
 		self.default_wait = default_wait
 		self.scroll_wait = default_wait/2
+		self.channel_url = channel_url
+		self.test_mode = test_mode
+
+		seleniumwire_options = {
+			'request_storage': 'memory',
+			'request_storage_max_size': 500  # Store no more than 500 requests in memory
+		}
 		if not headless:
-			self.driver = webdriver.Firefox() 
+			self.driver = webdriver.Firefox(seleniumwire_options=seleniumwire_options) 
 		else:
 			options = Options()
 			options.add_argument("--headless")
-			self.driver = webdriver.Firefox(options=options)
+			self.driver = webdriver.Firefox(options=options, seleniumwire_options=seleniumwire_options)
 			
-		self.channel_url = channel_url
-		self.logger = logger
+		self.driver.scopes.append('.*youtube.com.*')# capture only youtube traffic
 
 		self.initial_scroll_height = 0 # initial scroll height
 		self.current_scroll_height = 0
-		self.get_channel_name()
-
+		self.logger = logger
+		if not test_mode:
+			self.get_channel_name()
 
 	def __del__(self):
 		self.driver.quit()
 	
-	def log(self, msg:str, level="info")-> None:
+	def log(self, msg:str, level="debug")-> None:
+
 		msg = "Scrapper_Log - " + msg
 		self.logger.log(msg, level=level)
 	
-	def get(self, url:str) -> None:
+	def get(self, url:str, force=False) -> None:
+		'''Go to a website if we are not already on it'''
 		self.current_scroll_height = 0
-		self.driver.get(url)
+		if self.driver.current_url != url or force:
+			self.driver.get(url)
+			self.log(f"performed get request on url {url}")
 
 	def get_channel_name(self)-> str:
 		id = 'channel-name'
@@ -62,135 +82,211 @@ class ChannelScrapper():
 		if type == "tag_name" or type =='tag':
 			by = By.TAG_NAME
 
-		elif type== "id":
+		elif type == "id":
 			by=By.ID
 
 		try:
 			wait.until(EC.element_to_be_clickable((by, name)))
 		except TimeoutException:
 			# sometimes it errors even if the element is clickable
-			pass 
+			pass
+		self.wait_random_time()
 
+	def wait_for_dynamic_content_loading_spinner_to_disappear(self):
+		spinner_id = "spinner" # you can also use id ghost-cards
+		wait = WebDriverWait(self.driver, self.default_wait)
+		try:
+			# this will raise an NoSuchElementException if the spinner id elem is not there
+			self.driver.find_element_by_id(spinner_id).find_elements_by_class_name('active')
+			self.log('found dynamic content loading spinner...')
+			by = By.ID
+			locator = (by, spinner_id)
+			t = time.time()
+			# this will raise TimeoutException 
+			wait.until(EC.invisibility_of_element(locator))
+			t = time.time() - t
+			self.log(f"waited for dynamic content spinner to disappear for {t} seconds")
+		except (TimeoutException, NoSuchElementException):
+			# didn't find the spinner so all is good
+			pass
 
-	def get_playlists_info(self, channel_playlists_url:str):
-		'''gets all playlists info from the channel given a url, doesnt include all uploads playlists, example url https://www.youtube.com/c/greatscottlab/playlists
-		sample output
-		{
-		'Testing Circuits I found on the Internet!': {'num_videos': '2', 'videos':{videoName: videoURL, video2Name: video2Url, ...etc} 'url': 'https://www.youtube.com/playlist?list=PLAROrg3NQn7ccopMKCIOQq4NyVfWIz0Nz'},
-		'Q&A': {'num_videos': '15', 'videos':{videoName: videoURL, video2Name: video2Url, ...etc} 'url': 'https://www.youtube.com/playlist?list=PLAROrg3NQn7e2Eztc9zXlwZNn_heDZTtP'}, 
-		'DIY or Buy': {'num_videos': '24', 'videos':{videoName: videoURL, video2Name: video2Url, ...etc} 'url': 'https://www.youtube.com/playlist?list=PLAROrg3NQn7e3GQlBhuE_TIde0eJZHuzt'},
-		'3D Printing': {'num_videos': '13', 'videos':{videoName: videoURL, video2Name: video2Url, ...etc} 'url': 'https://www.youtube.com/playlist?list=PLAROrg3NQn7ctleg5jTtJKuW9jkdxXGSq'}, 
-		'Fix It!': {'num_videos': '3', 'videos':{videoName: videoURL, video2Name: video2Url, ...etc} 'url': 'https://www.youtube.com/playlist?list=PLAROrg3NQn7eBsxqekLpVbpCy-KAVKywG'},
-		'Electronics Projects': {'num_videos': '147', 'videos':{videoName: videoURL, video2Name: video2Url, ...etc} 'url': 'https://www.youtube.com/playlist?list=PLAROrg3NQn7dGPxb9CFtxwbgzLNaaj1Oe'},
-		'HACKED!': {'num_videos': '19', 'url': 'https://www.youtube.com/playlist?list=PLAROrg3NQn7fELM8O_Gm8wVqZIik8qzyv'}, 
-		'VS': {'num_videos': '16', 'videos':{videoName: videoURL, video2Name: video2Url, ...etc} 'url': 'https://www.youtube.com/playlist?list=PLAROrg3NQn7dDSD7_STXb94bX_EQrp01y'}, 
-		'Electronic Basics': {'num_videos': '49', 'videos':{videoName: videoURL, video2Name: video2Url, ...etc} 'url': 'https://www.youtube.com/playlist?list=PLAROrg3NQn7cyu01HpOv5BWo217XWBZu0'},
-		'num_playlists': 9
-		}
+	def get_all_channel_playlists_info(self, channel_playlists_url:str):
+		'''gets all created playlists info from the channel given a url, 
+		doesn't include all uploads playlists, example url https://www.youtube.com/c/greatscottlab/playlists
 		'''
-		playlist_class_name = 'ytd-grid-playlist-renderer'
+		self.log(f'getting all channel\'s created playlists for channel with url  {channel_playlists_url}')
+		if not('?view=' in channel_playlists_url):
+			channel_playlists_url = channel_playlists_url + "?view=1"
+		# if a channel has only created playlists then it doesn't have ?view=x so it's fine if we don't have it in the req
+		response_utils = Response_Utils()
+		self.clear_stored_requests()
 		self.get(channel_playlists_url)
-		self.wait_for_page_load(playlist_class_name)
-		elems = self.driver.find_elements_by_class_name(playlist_class_name)
-		num_playlists = 0
-		playlists_info = {}
-		for playlist_counter in range(0, len(elems), 6): # every 6 elements there is a new playlist (could change in the future)
-			num_videos = elems[playlist_counter].text
-			title = elems[playlist_counter +1].text
-			link =elems[playlist_counter +5].find_element_by_tag_name('a').get_attribute('href')
-			playlists_info[title] = {'_number_of_videos':num_videos.split('\n')[0], "url":link}
-			num_playlists += 1
+		self.wait_for_page_load("playlist-thumbnails", type='id')
 
-		for playlistName in playlists_info.keys():
-			# pdb.set_trace()
-			playlist = playlists_info[playlistName]
-			url = playlist["url"]
-			_, vids = self.get_video_info_from_playlist(url)
-			playlist["videos"] = vids
+		html_body = self._get_response_from_created_playlists_or_all_uploads_request(channel_playlists_url)
+		body_json = response_utils.extract_json_from_channel_playlists_get_response(html_body)
+		channel = Channel()
+		need_to_scroll = channel.extract_all_playlists_from_a_playlists_category_json_response(body_json)
+		if need_to_scroll:
+			self.clear_stored_requests()
+			self.scroll_down()
+			self.__scroll_down_and_get_remaining_elements(html_body, channel)
+		all_pl = channel.created_playlists_metadata
+		num_playlists = len(all_pl.keys())
+		self.log(f"found {num_playlists} playlists for the channel with url {channel_playlists_url}")
 
-		playlists_info['num_playlists'] = num_playlists
-
-		return playlists_info
-
-	def get_all_uploads_playlist_url(self, videos_tab_link:str)->str:
-		''' takes the link that you get after you press videos in the channel tab, example link input
-		https://www.youtube.com/user/FireSymphoney/videos'''
-		self.get(videos_tab_link)
-		self.wait_for_page_load('play-all', "id")
-		elem = self.driver.find_element_by_id('play-all').find_element_by_class_name('yt-simple-endpoint')
-		all_uploads_url = elem.get_attribute('href')
-		all_uploads_url = all_uploads_url.split('&')[0] # get rid of the query
-		return all_uploads_url
+		return all_pl
 
 
-	def get_video_info_from_playlist(self, playlist_url):
+	def _get_response_from_created_playlists_or_all_uploads_request(self,request_url:str, is_all_uploads=False) -> str:
+		''' goes over the requests stored in the buffer, and returns the response of 
+			the request_url for a specific playlist, if you want all uploads then pass is_all_uploads=True and its going to look at channel/videos instead of a specific playlist'''
+
+		if is_all_uploads:
+			url_path = '/videos'
+		else:
+			url_path = '/playlists'
+
+		for i in range(len(self.driver.requests)):
+			request = self.driver.requests[i]
+			response = request.response
+			content_type = request.headers.get_content_type()
+			is_content_text = 'text' in content_type
+			if url_path in request.url and response and response.body and is_content_text:
+				return self._decode_response_body(response)
+		raise Exception("Didn't find excpected request URL ", request_url)
+
+
+	def get_all_uploads_info_for_channel(self, channel_videos_url:str):
+		'''Gets all video info in the "all uploads" link of the channel, example url https://www.youtube.com/c/greatscottlab/videos
+		note that this gets the all-uploads playlist only, it doesn't get the unlisted videos that are only viewable inside the specific playlist that unlisted video is in '''
+
+		self.log('Scrapping channel/videos for url  {channel_videos_url}')
+		
+		response_utils = Response_Utils()
+		self.clear_stored_requests()
+		self.get(channel_videos_url)
+		self.wait_for_page_load("ytd-grid-video-renderer", type='tag')
+
+		html_body = self._get_response_from_created_playlists_or_all_uploads_request(channel_videos_url, is_all_uploads=True)
+		body_json = response_utils.extract_json_from_all_uploads_get_response(html_body)
+		channel = Channel()
+		need_to_scroll = channel.extract_videos_from_all_uploads_json_response(body_json)
+		if need_to_scroll:
+			self.clear_stored_requests()
+			self.scroll_down()
+			self.__scroll_down_and_get_remaining_elements(html_body, channel)
+
+		video_info = channel.all_uploads_videos
+		num = len(video_info.keys())
+		self.log(f"found {num} videos in all uploads for the channel ")
+
+		return video_info
+	
+	# obsolete, youtube changed their UI so this is no longer relevent
+	# def get_all_uploads_playlist_url(self, videos_tab_link:str)->str:
+	# 	''' takes the link that you get after you press videos in the channel tab, example link input
+	# 	https://www.youtube.com/user/FireSymphoney/videos'''
+	# 	self.get(videos_tab_link)
+	# 	self.wait_for_page_load('play-all', "id")
+	# 	try:
+	# 		elem = self.driver.find_element_by_id('play-all').find_element_by_class_name('yt-simple-endpoint')
+	# 		all_uploads_url = elem.get_attribute('href')
+	# 		all_uploads_url = all_uploads_url.split('&')[0] # get rid of the query
+	# 	except NoSuchElementException: #sometimes youtube doesn't have the play all button
+	# 		breakpoint()
+	# 		raise Exception("Could not find play all button, it may work if you try again")
+	# 	return all_uploads_url
+
+	def clear_stored_requests(self):
+		'''works for selenium-wire only'''
+		del self.driver.requests
+		self.wait_random_time() # wait a second so we don't accidentally clear something that's happening right now
+	
+	def  _decode_response_body(self,  response):
+		decoded = decode(response.body, response.headers.get('Content-Encoding', 'identity'))
+		decoded = str(decoded, 'utf-8', errors='replace')
+		return decoded
+
+	def _get_response_from_playlist_request(self,request_url:str) -> str:
+		''' goes over the requests stored in the buffer, and returns the response of the request_url for a specific playlist'''
+		for i in range(len(self.driver.requests)):
+			request = self.driver.requests[i]
+			response = request.response
+			playlist_id = request_url.replace("https://youtube.com/playlist?list=","")
+			playlist_id = playlist_id.replace("https://www.youtube.com/playlist?list=","") # in case url has www
+			if playlist_id in request.url and response and response.body:
+				return self._decode_response_body(response)
+				
+		raise Exception("Didn't find the requested url")
+
+	def get_playlist_info(self, playlist_url) -> dict:
 		'''takes playlist url, returns the number of videos in that playlist and an object {"video1Title": "video1url", video2:url ... and so on}
 		example playlist url https://www.youtube.com/playlist?list=UU6mIxFTvXkWQVEHPsEdflzQ'''
+		self.clear_stored_requests()
 		self.get(playlist_url)
-		containers_tag = 'ytd-playlist-video-renderer'
-		self.wait_for_page_load(containers_tag)
-		try:
-			# we get the number of videos from the playlist sidebar, only works if there's more than one video, if there's more an exception will be triggered and we have to catch that exception
-			num_videos = self.driver.find_element_by_xpath("/html/body/ytd-app/div/ytd-page-manager/ytd-browse/ytd-playlist-sidebar-renderer/div/ytd-playlist-sidebar-primary-info-renderer/div[1]/yt-formatted-string[1]/span[1]").text
-			num_videos = num_videos.replace(',', '')
-			num_videos = int(num_videos)
-		except NoSuchElementException:
-			# There is an edge case when the playlist has only one video, and in that case the html xpath is different and the element innner html is not just a number
-			#  it is something like this '1 video'
-			xpath = '/html/body/ytd-app/div/ytd-page-manager/ytd-browse/ytd-playlist-sidebar-renderer/div/ytd-playlist-sidebar-primary-info-renderer/div[1]/yt-formatted-string[1]'
-			num_videos = self.driver.find_element_by_xpath(xpath).text
-			num_videos = num_videos.split(' ')[0]
-			num_videos = int(num_videos.replace(',', ''))
-		except Exception as e:
-			traceback.print_exc()
-			raise "Scrapper error, didnt find element"
-
-		i = 0
-		vids = {} # this is the videos we keep from scrapping
-		infinite_loop_saftey = 10 #if we go through the program this many times without changes to the main list we will shut the while loop down
-		useless_loops_counter = 0 # to protect us against the infinite while loops that are possible in case i never increments above a certain thing
-		all_videos_links_with_duplicates = []
-		all_videos_titles_with_duplicates = []
-		while i  < num_videos:
-			# this only shows the first 100 videos or so, you need to keep scrolling down to load the rest
-			videos_batch = self.driver.find_elements_by_tag_name(containers_tag) # this updates everytime we scroll down
-			for video_container in videos_batch:
-				video = video_container.find_elements_by_id('video-title')[0]
-				link = video.get_attribute('href')
-				all_videos_links_with_duplicates.append(link)
-				title = video.get_attribute('title')
-				all_videos_titles_with_duplicates.append(title)
-				
-				# catches videos we dont have
-				if not (title in vids.keys()):
-					vids[title] = link
-					i += 1
-					useless_loops_counter = 0
-
-				# catches videos that we dont have if they have the same name as a video we already have
-				elif vids[title] != link:
-					# we have a duplicate name but the video url they point is different
-					duplicate_title = title + "_" +str(i) # the link is different so we add the video but we change the name a bit
-					vids[duplicate_title]=link
-					i += 1
-					useless_loops_counter = 0
-				
-			useless_loops_counter +=1
-			if useless_loops_counter >= infinite_loop_saftey:
-				obtained_videos_num = len(vids.keys())
-				self.log(f'couldnt get all videos from the playlist as some videos are hidden or something, got {obtained_videos_num}/{num_videos} for playlist {playlist_url}', level="warn")
-				break_while_loop = True
-				break
-
+		self.wait_for_page_load("ytd-playlist-video-renderer")
+		self.log(f"getting all videos for playlist:  {playlist_url}")
+		html_body = self._get_response_from_playlist_request(playlist_url)
+		response_utils = Response_Utils()
+		my_json = response_utils.extract_json_from_specific_playlist_get_response(html_body)
+		playlist_handler = Playlist()
+		need_to_scroll = playlist_handler.extract_playlist_info_from_json_payload(my_json)
+		if need_to_scroll:
+			self.clear_stored_requests()
 			self.scroll_down()
-			time.sleep(self.scroll_wait)
-		
-		num_videos_real = len(vids.keys()) # we want the true number of videos without the hidden videos
-		x = min(abs(num_videos_real - num_videos), 10)
-		if(x >= 10):
-			self.log(f"Warning, this playlist has many videos not availabe for download {playlist_url}")
+			self.__scroll_down_and_get_remaining_elements(html_body, playlist_handler)
+		videos = playlist_handler.get_playlist_info_as_dict()
+		num_videos = videos[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER]
+		self.log(f"found {num_videos} videos for playlist {playlist_url}")
+		return videos
 
-		return num_videos_real, vids
+	def __scroll_down_and_get_remaining_elements(self, html_get_response:str, object_to_scrape:Union[Playlist, Channel], all_uploads=False) -> None:
+		'''scrolls down to get remaining content that's created dynamically when you scroll, accepts either a playlist or channel object
+		ARGS: 
+			html_get_response:str -> The html text of the response body
+			object_to_scrape: either a Playlist or Channel -> do we want to extract dynamically created Playlists or Videos in a playlists
+							  if we want to get a specific playlist dynamic videos pass a Playlist object. If you want all the dynamically created
+							  playlists of a channel pass a Channel object
+			all_uploads: if you're scrapping the channel/videos url for all_uploaded videos, then you must set this to True and pass a Channel object
+		Returns:
+			None -> since we update the passed Playlist or Channel object no need to return anything
+		'''
+		if isinstance(object_to_scrape, Playlist):
+			extracting_function = object_to_scrape.extract_playlist_info_from_json_payload
+
+		elif all_uploads and isinstance(object_to_scrape,Channel):
+			extracting_function = object_to_scrape.extract_videos_from_all_uploads_json_response	
+
+		elif isinstance(object_to_scrape, Channel):
+			extracting_function = object_to_scrape.extract_all_playlists_from_a_playlists_category_json_response
+		else:
+			raise Exception('The object_to_scrape must be either a Playlist or a Channel, are you scrapping all_uploads, if so set it to all_uploads=True')
+		
+		pattern = "(?<=\"INNERTUBE_API_KEY\":\")[\w]*(?=\",)*"
+		api_key = re.search(pattern, html_get_response).group(0)
+		keep_scrolling = True
+		infinite_loop_safety = 100
+
+		while(keep_scrolling and infinite_loop_safety > 0):
+			infinite_loop_safety -=1
+			for req in self.driver.requests:
+				response = req.response
+				if api_key in req.url and "/browse" in req.url and response and response.body:
+					self.log(f"The request url we're inspecting is: {req.url}")
+					decoded_resp_body = self._decode_response_body(response)
+					decoded_resp_body = json.loads(decoded_resp_body)
+					keep_scrolling = extracting_function(decoded_resp_body)
+					infinite_loop_safety += 1
+									
+			self.clear_stored_requests()
+			self.scroll_down()
+			self.wait_random_time() # give the spinner a chance to appear
+			self.wait_for_dynamic_content_loading_spinner_to_disappear()
+
+		if infinite_loop_safety <=0:
+			self.log("Warning triggered infinite loop safety", level="warn")
+
 
 	def get_channel_about(self, playlist_about_url:str)->dict:
 		self.get(playlist_about_url)
@@ -232,78 +328,17 @@ class ChannelScrapper():
 	def scroll_down(self, scroll_offset = 700):
 		"""A method for scrolling the page."""
 		self.current_scroll_height += self.current_scroll_height + scroll_offset
+		self.log("scrolling down")
 		self.driver.execute_script(f"window.scrollTo(0, {self.current_scroll_height});")
+		time.sleep(self.scroll_wait)
 
-
-
-# a = get_playlists_info(c, driver)
-# print(a)
-
-# cc = 'https://www.youtube.com/c/greatscottlab/videos'
-# aa = get_all_uploads_playlist_url(cc, driver)
-# print(aa)
-
-# s = ChannelScrapper("blah", headless=False, default_wait=1)
-# a = s.get_channel_about("https://www.youtube.com/c/ElectricianU/about")
-# print(a)
-
-def tests():
-	s = ChannelScrapper("https://www.youtube.com/user/FireSymphoney/featured", headless=False)
-	num, videos = s.get_video_info_from_playlist("https://www.youtube.com/playlist?list=UU6mIxFTvXkWQVEHPsEdflzQ")
-	assert type(num) == int, "type of number of videos should be an int"
-	assert type(videos) == dict, "type of videos must be dict"
-
-	url = s.get_all_uploads_playlist_url('https://www.youtube.com/c/greatscottlab/videos')
-	assert type(url) == str, "all uploads playlist url should be a string"
-
-	pl_url = 'https://www.youtube.com/c/greatscottlab/playlists'
-	playListInfo = s.get_playlists_info(pl_url)
-	assert type(playListInfo) == dict, "the info should be dict"
-	# pdb.set_trace()
-
-# tests()
-
-# c = "https://www.youtube.com/c/greatscottlab/playlists"
-# s = ChannelScrapper(c, headless=False)
-# playlist_info = s.get_playlists_info(c)
-# print(playlist_info)
-# # debug commands
-
-'''
-d = webdriver.Firefox()
-url = "https://www.youtube.com/c/greatscottlab/videos"
-d.get(url)
-'''
+	def wait_random_time(self):
+		x = max(self.default_wait, 3)
+		x = randint(1, x) * random() * 1.33
+		time.sleep(x)
 
 
 
 
 
-'''
---- Channel backup
 
-There are videos in 'all uploads' that are not in any of the playlists, there are also videos in the playlists that could are not in the 'all uploads' for example when a video is restricted and viewable only for ppl with the link and the link in the playlist
-My strategy: find all videos in 'all uploads' and keep a hashmap where every playlist title is the key, and the value is a child hashmap that contains the videos in that playlist So at first 'all uploads' key will be populated with video names key and links as values, and then the same will happen for every
-playlist.  So now we will have a hasmap where keys are playlist names and values are  another hash maps that has video names for keys and values are the video urls. 
-
-After that all of the urls will be combined in one set, and downloaded
-
- {
-	"PlayList1" : {
-		"playlist-info": {
-			"playlistLink" : "url-playlist",
-			"number_of_videos" : 300
-		}
-		"video1_title": "video1 url",
-		"video2_title": "video2_url",
-		...},
-	"PlayList2" : {...}
-	"AllUploads" : {...}
-
-	and so on ...
-	}
-}
-
-
-
-'''

@@ -57,7 +57,6 @@ class TestDownloader(unittest.TestCase):
 			assert len(failed_downloads) == 5, "The length of the list should be 4 as thats the num of faulty downloads"
 
 
-
 	def test_clean_bad_downloads(self):
 		# all_videos_dir = os.path.join(self.fixtures_downloaded_channel_path, 'videos')
 		# {key: value[:] for key, value in self.downloader.__dict__.items()} # this is for deep copy which is not needed
@@ -67,9 +66,6 @@ class TestDownloader(unittest.TestCase):
 			with patch.object(self.downloader, "delete_file", return_value=None) as delete_mock:
 				self.downloader.clean_bad_downloads()
 				assert len(delete_mock.call_args_list) == 5, "the clean up should have called delete five times to clean up failed downloads"
-
-
-
 
 
 
