@@ -56,7 +56,7 @@ class TestDownloader(unittest.TestCase):
 		assert json_dict[Keys.PLAYLIST_MEMBERS_ONLY_VIDEOS_NUMBER] == 0, f"{url} didn't correctly get all members only videos"
 
 
-	def test_get_all_channel_playlists_info(self):
+	# def test_get_all_channel_playlists_info(self):
 		playlists_only_default_view_no_scroll = "https://www.youtube.com/c/3thestorm/playlists"
 		playlist_wrong_view_with_scroll = "https://www.youtube.com/c/MegwinTVOfficial/playlists"
 		playlist_correct_view_with_scroll = "https://www.youtube.com/c/learnelectronics/playlists?view=1"
@@ -81,6 +81,36 @@ class TestDownloader(unittest.TestCase):
 		created_playlists = self.scrapper.get_all_channel_playlists_info(url)
 		num_playlists = len(created_playlists.keys())
 		assert num_playlists == 241,f"found {num_playlists} should have been 241, didn't get correct number of playlists for f {url}"
+
+
+	def test_get_all_uploads_info_for_channel(self):
+		with_scroll = 'https://www.youtube.com/c/3thestorm/videos'
+		expected_with_scroll = 52 
+
+		no_scroll = 'https://www.youtube.com/user/FireSymphoney/videos'
+		expected_no_scroll = 12
+
+		lot_of_scrolling = 'https://www.youtube.com/c/EevblogDave/videos'
+		expected_scroll_lot = 1755
+
+		url = with_scroll
+		json_dict = self.scrapper.get_all_uploads_info_for_channel(url)
+		num = len(list(json_dict.keys()))
+		assert num == expected_with_scroll, f'expected {expected_with_scroll} videos, but got {num} for {url}'
+
+		url = no_scroll
+		json_dict = self.scrapper.get_all_uploads_info_for_channel(url)
+		num = len(list(json_dict.keys()))
+		assert num == expected_no_scroll, f'expected {expected_no_scroll} videos, but got {num} for {url}'
+
+		url = lot_of_scrolling
+		json_dict = self.scrapper.get_all_uploads_info_for_channel(url)
+		num = len(list(json_dict.keys()))
+		assert num == expected_scroll_lot, f'expected {expected_scroll_lot} videos, but got {num} for {url}'
+		
+
+	def test_scrape_for_playlists(self):
+		pass
 
 if __name__ == '__main__':
 	unittest.main()
