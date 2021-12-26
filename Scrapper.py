@@ -114,7 +114,7 @@ class ChannelScrapper():
 		'''gets all created playlists info from the channel given a url, 
 		doesn't include all uploads playlists, example url https://www.youtube.com/c/greatscottlab/playlists
 		'''
-		self.log('getting all channel\'s created playlists for channel with url ', channel_playlists_url)
+		self.log(f'getting all channel\'s created playlists for channel with url  {channel_playlists_url}')
 		if not('?view=' in channel_playlists_url):
 			channel_playlists_url = channel_playlists_url + "?view=1"
 		# if a channel has only created playlists then it doesn't have ?view=x so it's fine if we don't have it in the req
@@ -133,7 +133,7 @@ class ChannelScrapper():
 			self.__scroll_down_and_get_remaining_elements(html_body, channel)
 		all_pl = channel.created_playlists_metadata
 		num_playlists = len(all_pl.keys())
-		self.log(f"found {num_playlists} playlists for the channel ")
+		self.log(f"found {num_playlists} playlists for the channel with url {channel_playlists_url}")
 
 		return all_pl
 

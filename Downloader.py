@@ -37,10 +37,10 @@ import re
 import time
 
 class Downloader():
-	def __init__(self, channel_url, max_update_lag = 0, browser_wait = 3, headless=False):
+	def __init__(self, channel_url, max_update_lag = 0, browser_wait = 3, headless=False, root_path="youtube_backup"):
 
 		## things needed for first initialization in order
-		self.root_path = "youtube_backup"
+		self.root_path = root_path
 		self.init_root_dir()
 		log_file_path = os.path.join(self.root_path, "logfile.txt")
 		self.logger = Log(log_file_path) # the logger must follow the init root dir directly
@@ -310,8 +310,8 @@ class Downloader():
 		self.log("Getting all of the playlists information...", print_log=True)
 		all_playlists_info = self.scrapper.get_all_channel_playlists_info(self.playlists_url)
 		# all_playlists_info.pop('num_playlists')
-		for playlist in all_playlists_info.keys():
-			self.write_playlist_info_json(playlist[Keys.PLAYLIST_NAME], all_playlists_info[playlist])
+		for key, playlist in all_playlists_info.items():
+			self.write_playlist_info_json(playlist[Keys.PLAYLIST_NAME], all_playlists_info[key])
 
 	def get_all_uploads_playlist_data(self) ->  dict :
 		'''checks if we already have the links we need as a json file, if we do will read that json file and return a dict,
@@ -344,7 +344,7 @@ class Downloader():
 		all_playlists = self.scrapper.get_all_channel_playlists_info(self.playlists_url)
 		channel_info[Keys.CHANNEL_ABOUT] = channel_about
 		channel_info[Keys.URL] = self.channel_url
-		channel_info[Keys.DATEKEY] = get_now_date()
+		channel_info[Keys.DATEKEY] = {get_now_date(): "install - history is not supported for Channels about yet"}
 		channel_info[Keys.NUMBER_OF_PLAYLISTS] = len(all_playlists.keys())
 		channel_info[Keys.CREATED_PLAYLISTS] = all_playlists
 
