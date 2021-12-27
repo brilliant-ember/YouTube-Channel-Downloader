@@ -35,6 +35,7 @@ class ChannelScrapper():
 		self.test_mode = test_mode
 		self.should_be_on_url = ""
 		self.stuck_counter = 0
+		self.request_retry_number = 5
 
 		seleniumwire_options = {
 			'request_storage': 'memory',
@@ -50,8 +51,6 @@ class ChannelScrapper():
 		self.driver.scopes.append('.*youtube.com.*')# capture only youtube traffic
 		self.action_chain = ActionChains(self.driver)
 
-		self.initial_scroll_height = 0 # initial scroll height
-		self.current_scroll_height = 0
 		self.logger = logger
 		if not test_mode:
 			self.get_channel_name()
@@ -66,12 +65,24 @@ class ChannelScrapper():
 	
 	def get(self, url:str, force=False) -> None:
 		'''Go to a website if we are not already on it'''
-		self.current_scroll_height = 0
 		self.should_be_on_url = url
+		wait = WebDriverWait(self.driver, self.default_wait)
 		if self.driver.current_url != url or force:
-			self.driver.get(url)
-			self.log(f"performed get request on url {url}")
-			wait = WebDriverWait(self.driver, self.default_wait)
+			try:
+				self.driver.get(url)
+			except TimeoutException:
+				if self.request_retry_number > 0:
+					self.wait_random_time()
+					self.log(f'get request timeout on url {url}, will try again', level='warn')
+					self.request_retry_number -= 1
+					self.get(url, force=True)
+					self.wait_for_page_load('body',type='tag')
+				else:
+					self.log(f'Failed to on get request {url}, exiting', level="critical")
+					raise TimeoutException("Max retries reached and I still keep getting timeout errors")
+
+			self.log(f"successfully performed get request on url {url}")
+			self.request_retry_number = 5
 			try:
 				wait.until(EC.url_to_be(url))
 			except TimeoutException:
@@ -98,7 +109,7 @@ class ChannelScrapper():
 			by=By.ID
 
 		try:
-			wait.until(EC.element_to_be_clickable((by, name)))
+			wait.until(EC.visibility_of_any_elements_located((by, name)))
 		except TimeoutException:
 			# sometimes it errors even if the element is clickable
 			pass
@@ -106,19 +117,21 @@ class ChannelScrapper():
 
 	def wait_for_dynamic_content_loading_spinner_to_disappear(self):
 		spinner_id = "spinner" # you can also use id ghost-cards
+		active_spinner_class = 'active'
+
 		wait = WebDriverWait(self.driver, self.default_wait)
 		try:
-			# this will raise an NoSuchElementException if the spinner id elem is not there
-			self.driver.find_element_by_id(spinner_id).find_elements_by_class_name('active')
+			# will raise NoSuchElementException if spinner is not there
+			spinner = self.driver.find_element_by_id(spinner_id).find_element_by_class_name(active_spinner_class)
 			self.log('found dynamic content loading spinner...')
 			by = By.ID
-			locator = (by, spinner_id)
+			# locator = (by, spinner_id)
 			t = time.time()
 			# this will raise TimeoutException 
-			wait.until(EC.invisibility_of_element(locator))
+			wait.until(EC.invisibility_of_element(spinner))
 			t = time.time() - t
 			self.log(f"waited for dynamic content spinner to disappear for {t} seconds")
-		except (TimeoutException, NoSuchElementException, StaleElementReferenceException):
+		except (TimeoutException, NoSuchElementException, StaleElementReferenceException) as e:
 			# didn't find the spinner so all is good
 			pass
 
@@ -171,9 +184,8 @@ class ChannelScrapper():
 			playlist_id = re.search(regex_pattern, url).group(0)
 			number_of_videos = 00000 # we will not extract that for now, use placeholder value
 			was_playlist_missing = channel.add_missing_playlists_if_any(playlist_id, title, url, number_of_videos)
-			if was_playlist_missing:
-				self.log(f'playlist url {url} was missed by response parser, but scrapper rain-check caught it')	
-
+			# if was_playlist_missing:
+				# self.log(f'playlist url {url} was missed by response parser, but scrapper rain-check caught it')	
 
 	def _get_response_from_created_playlists_or_all_uploads_request(self,request_url:str, is_all_uploads=False) -> str:
 		''' goes over the requests stored in the buffer, and returns the response of 
@@ -247,8 +259,8 @@ class ChannelScrapper():
 				url = video.get_attribute('href')
 				video_id = re.search(regex_pattern, url).group(0)
 				was_video_missing = playlist.add_missing_videos_if_any(video_id, title, url, is_members_only)
-				if was_video_missing:
-					self.log(f'video url {url} was missed by response parser, but scrapper rain-check caught it')
+				# if was_video_missing:
+				# 	self.log(f'video url {url} was missed by response parser, but scrapper rain-check caught it')
 
 	def scrape_for_videos_in_channel(self, channel:Channel) -> None:
 		'''gets all channel's uploads from page with url channel/videos and adds them to the passed channel object
@@ -268,8 +280,8 @@ class ChannelScrapper():
 			url = video.get_attribute('href')
 			video_id = re.search(regex_pattern, url).group(0)
 			was_video_missing = channel.add_missing_videos_if_any(video_id, title, url)
-			if was_video_missing:
-				self.log(f'video url {url} was missed by response parser, but scrapper rain-check caught it')
+			# if was_video_missing:
+			# 	self.log(f'video url {url} was missed by response parser, but scrapper rain-check caught it')
 
 	def clear_stored_requests(self):
 		'''works for selenium-wire only'''
@@ -318,6 +330,14 @@ class ChannelScrapper():
 		videos = playlist_handler.get_playlist_info_as_dict()
 		additional_videos = videos[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER] - num_videos
 		self.log(f"After rain check found {additional_videos} additional videos, so total {videos[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER]} for playlist {playlist_url}")
+		
+		total_downloaded = playlist_handler.available_videos + playlist_handler.members_only_videos
+		gross_total = playlist_handler.gross_number_of_videos
+		if (total_downloaded * 1.3) < gross_total:
+			self.log(f'''Expected a number slightly less than {gross_total} but got {total_downloaded}. Which means that
+			 more than 30% of playlist was not downloaded, are they private videos or did a problem happen?\n
+			 please check url {playlist_url}''',  type='critical')
+		
 		return videos
 
 	def __scroll_down_and_get_remaining_elements(self, html_get_response:str, object_to_scrape:Union[Playlist, Channel], all_uploads=False) -> None:
@@ -352,7 +372,7 @@ class ChannelScrapper():
 			for req in self.driver.requests:
 				response = req.response
 				if api_key in req.url and "/browse" in req.url and response and response.body:
-					self.log(f"The request url we're inspecting is: {req.url}")
+					# self.log(f"The request url we're inspecting is: {req.url}")
 					decoded_resp_body = self._decode_response_body(response)
 					decoded_resp_body = json.loads(decoded_resp_body)
 					keep_scrolling = extracting_function(decoded_resp_body)
@@ -404,20 +424,31 @@ class ChannelScrapper():
 		}
 
 	def scroll_down(self, scroll_offset = 700):
-		"""A method for scrolling the page."""
-		# self.current_scroll_height += self.current_scroll_height + scroll_offset #this hangs sometimes and doesn't actually scroll
-		# self.driver.execute_script(f"window.scrollTo(0, {self.current_scroll_height});")
-		self.action_chain.send_keys(Keyboard.END).perform()
+		"""A method for scrolling the page.
+		dynamic content appear when we scroll down, however, we can't just scroll down
+	 	because the youtube listview renderer doesn't always render all items when you go to the end of the page directly.
+		so we do it in increments"""
+
+		# scroll in increments to make sure all dynamic content is rendered
+		scroll_number = randint(9, 12) # usually 10 page downs are equal to one press of the END key
 		self.log("scrolling down")
+		for _ in range(scroll_number):
+			self.action_chain.send_keys(Keyboard.PAGE_DOWN).perform()
+			self.wait_random_time()
+			self.wait_random_time()
+			
+		self.action_chain.send_keys(Keyboard.END).perform() # make sure we're at the bottom
 		time.sleep(self.scroll_wait)
+		self.are_we_stuck_on_a_page()
+
+	def are_we_stuck_on_a_page(self):
 		if self.driver.current_url != self.should_be_on_url:
 			self.stuck_counter +=1
 			if self.stuck_counter >= 10:
-				self.log("ohhh nooo I got stuck, will attempt a get request on the link I should go to")
+				self.log(f"ohhh nooo I got stuck, will attempt a get request on the link I should go to: {self.should_be_on_url}", level='warn')
 				self.get(self.should_be_on_url, force=True)
 		else:
 			self.stuck_counter = 0
-
 
 	def wait_random_time(self):
 		x = max(self.default_wait, 3)

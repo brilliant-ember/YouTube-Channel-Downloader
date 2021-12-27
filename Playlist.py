@@ -5,7 +5,7 @@ from selenium.webdriver.remote.webelement import WebElement
 class Playlist():
     def __init__(self):
         # self.playlist_url = playlist_url
-        self.gross_number_of_videos = 0
+        self.gross_number_of_videos = 0 #num of videos includeding private, membersOnly and available videos
         self.num_available_videos = 0
         self.num_members_only_videos = 0
         self.playlist_id = ""
