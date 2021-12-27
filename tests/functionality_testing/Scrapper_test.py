@@ -82,5 +82,32 @@ class TestDownloader(unittest.TestCase):
 		num_playlists = len(created_playlists.keys())
 		assert num_playlists == 241,f"found {num_playlists} should have been 241, didn't get correct number of playlists for f {url}"
 
+
+	def test_get_all_uploads_info_for_channel(self):
+		with_scroll = 'https://www.youtube.com/c/3thestorm/videos'
+		expected_with_scroll = 52 
+
+		no_scroll = 'https://www.youtube.com/user/FireSymphoney/videos'
+		expected_no_scroll = 12
+
+		lot_of_scrolling = 'https://www.youtube.com/c/EevblogDave/videos'
+		expected_scroll_lot = 1756
+
+		url = with_scroll
+		json_dict = self.scrapper.get_all_uploads_info_for_channel(url)
+		num = len(list(json_dict.keys()))
+		assert num == expected_with_scroll, f'expected {expected_with_scroll} videos, but got {num} for {url}'
+
+		url = no_scroll
+		json_dict = self.scrapper.get_all_uploads_info_for_channel(url)
+		num = len(list(json_dict.keys()))
+		assert num == expected_no_scroll, f'expected {expected_no_scroll} videos, but got {num} for {url}'
+
+		url = lot_of_scrolling
+		json_dict = self.scrapper.get_all_uploads_info_for_channel(url)
+		num = len(list(json_dict.keys()))
+		assert num == expected_scroll_lot, f'expected {expected_scroll_lot} videos, but got {num} for {url}'
+		
+
 if __name__ == '__main__':
 	unittest.main()

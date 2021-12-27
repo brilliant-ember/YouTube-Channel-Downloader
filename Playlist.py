@@ -1,10 +1,11 @@
-from utils import json_value_extract, Keys, get_now_date, generate_playlist_url, YtElms
+from utils import json_value_extract, Keys, get_now_date, generate_playlist_url, YtElms, generate_video_url
+from selenium.webdriver.remote.webelement import WebElement
+
 
 class Playlist():
     def __init__(self):
         # self.playlist_url = playlist_url
-        self.playlist_videos = []
-        self.gross_number_of_videos = 0
+        self.gross_number_of_videos = 0 #num of videos includeding private, membersOnly and available videos
         self.num_available_videos = 0
         self.num_members_only_videos = 0
         self.playlist_id = ""
@@ -76,14 +77,40 @@ class Playlist():
             return True
         return False
 
+    # test this in functional testing TODO
+    def using_html_element_is_video_members_only(self, web_element: WebElement, members_only_tag_name:str) -> bool:
+        ''' checks if the provided html tag contains 'Members only' text '''
+        for i in web_element.find_elements_by_tag_name(members_only_tag_name):
+            if "Members only" in i.text:
+                return True
+        return False
+
     def __extract_video_info_from_playlistVideoRenderer(self, video_obj:dict)->dict:
-        video_id = video_obj['videoId']
+        video_id = video_obj[YtElms.VIDEO_ID]
         video_title = video_obj['title']['runs'][0]['text']
-        length_text = video_obj['lengthText']['simpleText']
+        video_url = generate_video_url(video_id)
+        # length_text = video_obj['lengthText']['simpleText']
         # length_text = video_obj['lengthText']['accessibility']['accessibilityData']['label']
         if self.__is_video_members_only(video_obj):
-            self.members_only_videos[video_id] = {"video_title":video_title, "length":length_text}
+            self.members_only_videos[video_id] = {Keys.VIDEO_NAME: video_title, Keys.URL: video_url}
             self.num_members_only_videos +=1
         else:
-            self.available_videos[video_id] = {"video_title":video_title, "length":length_text}
+            self.available_videos[video_id] = {Keys.VIDEO_NAME: video_title, Keys.URL: video_url}
             self.num_available_videos = self.num_available_videos + 1
+    
+    def does_key_exist(self, key):
+        if key in self.available_videos.keys() or key in self.members_only_videos.keys():
+            return True
+        return False
+
+    def add_missing_videos_if_any(self, video_id:str, video_title:str, video_url:str, is_members_only:bool) -> bool:
+        '''if the passed video wasn't already recorder returns true and adds it to record, otherwise return False'''
+        if not self.does_key_exist(video_id):
+            if is_members_only:
+                self.members_only_videos[video_id] = {Keys.VIDEO_NAME: video_title, Keys.URL: video_url}
+                self.num_members_only_videos +=1
+            else:
+                self.available_videos[video_id] = {Keys.VIDEO_NAME: video_title, Keys.URL: video_url}
+                self.num_available_videos +=1
+            return True
+        return False
