@@ -1,3 +1,3 @@
-pytube @ git+https://github.com/pytube/pytube.git@f06e0710dcf5089e582487fee94f7bb0afbf7ba9
+pytube @ git+https://github.com/pytube/pytube.git
 selenium==3.141.0
 selenium-wire==4.5.6

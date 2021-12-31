@@ -68,6 +68,8 @@ class Playlist():
         side_bar_info = json_value_extract(json_get_resp, 'playlistSidebarPrimaryInfoRenderer')[0]
         stats = json_value_extract(side_bar_info, 'stats')[0]
         self.gross_number_of_videos = stats[0]['runs'][0]['text'] # number of all videos including unavailable videos
+        self.gross_number_of_videos = self.gross_number_of_videos.split(" ")[0]
+        self.gross_number_of_videos = int(self.gross_number_of_videos.replace(",",""))
 
 
     def __is_video_members_only(self, video_playlist_renderer:dict)->bool:
