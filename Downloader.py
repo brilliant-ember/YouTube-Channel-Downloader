@@ -27,7 +27,7 @@ from pytube.request import get, head
 from Scrapper import ChannelScrapper
 from Logger import Log
 from Custom_Exceptions import VideoExistsError
-from utils import get_now_date, compare_dicts, get_days_between_dates, over_write_json_file,read_json_file, Keys, remove_slash_from_strings
+from utils import get_now_date, compare_dicts, get_days_between_dates, over_write_json_file,read_json_file, Keys, remove_slash_from_strings, generate_playlist_url
 import os
 from sys import stdout, exit
 from signal import signal, SIGINT
@@ -75,6 +75,7 @@ class Downloader():
 		self.allow_download = True
 		self.max_update_lag = max_update_lag # scrape the channel if the current json record is more than x days old, put zero to scrape the channel once regardless of the freshness of the record
 		self.num_created_video_dirs = 0
+		self.all_playlists = {}
 		
 		self.log(f'Bismillah! initialized a Download for channel {self.channel_name} at {self.channel_path}', print_log=True)
 		
@@ -308,10 +309,12 @@ class Downloader():
 		note below is obsolete, /videos has all videos we need now, no need to extract the special playlist for all-uploads
 		'''
 		self.log("Getting all of the playlists information...", print_log=True)
-		all_playlists_info = self.scrapper.get_all_channel_playlists_info(self.playlists_url)
+		if not self.all_playlists:
+			self.all_playlists = self.scrapper.get_all_channel_playlists_info(self.playlists_url)
 		# all_playlists_info.pop('num_playlists')
-		for key, playlist in all_playlists_info.items():
-			self.write_playlist_info_json(playlist[Keys.PLAYLIST_NAME], all_playlists_info[key])
+		for playlist_id, playlist_metadata in self.all_playlists.items():
+			playlist_info = self.scrapper.get_playlist_info(generate_playlist_url(playlist_id))
+			self.write_playlist_info_json(playlist_metadata[Keys.PLAYLIST_NAME], playlist_info)
 
 	def get_all_uploads_playlist_data(self) ->  dict :
 		'''checks if we already have the links we need as a json file, if we do will read that json file and return a dict,
@@ -341,12 +344,13 @@ class Downloader():
 	def write_channel_info(self) -> None:
 		channel_info = {}
 		channel_about = self.scrapper.get_channel_about(self.about_url)
-		all_playlists = self.scrapper.get_all_channel_playlists_info(self.playlists_url)
+		if not self.all_playlists:
+			self.all_playlists = self.scrapper.get_all_channel_playlists_info(self.playlists_url)
 		channel_info[Keys.CHANNEL_ABOUT] = channel_about
 		channel_info[Keys.URL] = self.channel_url
 		channel_info[Keys.DATEKEY] = {get_now_date(): "install - history is not supported for Channels about yet"}
-		channel_info[Keys.NUMBER_OF_PLAYLISTS] = len(all_playlists.keys())
-		channel_info[Keys.CREATED_PLAYLISTS] = all_playlists
+		channel_info[Keys.NUMBER_OF_PLAYLISTS] = len(self.all_playlists.keys())
+		# channel_info[Keys.CREATED_PLAYLISTS] = all_playlists
 
 		try:
 			json_file_path = os.path.join(self.info_path, "channel_info.json")

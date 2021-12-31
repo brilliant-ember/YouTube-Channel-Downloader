@@ -13,7 +13,7 @@ from unittest.mock import patch
 import Scrapper
 from Logger import Log
 
-class TestDownloader(unittest.TestCase):
+class TestScrapper(unittest.TestCase):
 	def setUp(self) -> None:
 		some_random_url = "https://www.youtube.com/c/greatscottlab"
 		log_file_path = os.path.join(cwd, "logfile.txt")
@@ -65,7 +65,7 @@ class TestDownloader(unittest.TestCase):
 		url = playlists_only_default_view_no_scroll
 		created_playlists = self.scrapper.get_all_channel_playlists_info(url)
 		num_playlists = len(created_playlists.keys())
-		assert num_playlists == 3, f"found {num_playlists} should have been 3,didn't get correct number of playlists for f {url}"
+		assert num_playlists == 0, f"found {num_playlists} should have been 3,didn't get correct number of playlists for f {url}"
 
 		url = playlist_correct_view_with_scroll
 		created_playlists = self.scrapper.get_all_channel_playlists_info(url)
@@ -85,7 +85,7 @@ class TestDownloader(unittest.TestCase):
 
 	def test_get_all_uploads_info_for_channel(self):
 		with_scroll = 'https://www.youtube.com/c/3thestorm/videos'
-		expected_with_scroll = 52 
+		expected_with_scroll = 50 
 
 		no_scroll = 'https://www.youtube.com/user/FireSymphoney/videos'
 		expected_no_scroll = 12

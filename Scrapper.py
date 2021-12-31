@@ -135,7 +135,7 @@ class ChannelScrapper():
 			# didn't find the spinner so all is good
 			pass
 
-	def get_all_channel_playlists_info(self, channel_playlists_url:str):
+	def get_all_channel_playlists_info(self, channel_playlists_url:str) -> dict:
 		'''gets all created playlists info from the channel given a url, 
 		doesn't include all uploads playlists, example url https://www.youtube.com/c/greatscottlab/playlists
 		'''
@@ -331,12 +331,12 @@ class ChannelScrapper():
 		additional_videos = videos[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER] - num_videos
 		self.log(f"After rain check found {additional_videos} additional videos, so total {videos[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER]} for playlist {playlist_url}")
 		
-		total_downloaded = playlist_handler.available_videos + playlist_handler.members_only_videos
+		total_downloaded = playlist_handler.num_members_only_videos + playlist_handler.num_available_videos
 		gross_total = playlist_handler.gross_number_of_videos
-		if (total_downloaded * 1.3) < gross_total:
+		if int(total_downloaded * 1.3) < gross_total:
 			self.log(f'''Expected a number slightly less than {gross_total} but got {total_downloaded}. Which means that
 			 more than 30% of playlist was not downloaded, are they private videos or did a problem happen?\n
-			 please check url {playlist_url}''',  type='critical')
+			 please check url {playlist_url}''',  level='critical')
 		
 		return videos
 
