@@ -104,16 +104,20 @@ def compare_dicts(existing_dict:dict, new_dict:dict) -> tuple[set, set]:
 	return list(newly_added_keys), list(missing_keys)
 
 
-def remove_slash_from_strings(s:str)->str:
+def remove_dir_illegal_chars(s:str)->str:
 	'''removes slashes and replaces them with -'''
 	# replaces the "/" with "／" look at them next to each other ／/ , they are different
 	# this is so video names with slashes in their names dont get created as multile dirs, example AC/DC
 	# would get created as a directory tree instead of a file names AC/DC
 	#
 	# some unicodes are not supported in all machines, will replace with -
+	# There are other chars that are not allowed in file names, and these are handled here
 
-	s = s.replace("/","-")
 	s = s.replace("\\", "-")
+
+	illegal_chars = '/:*?"<>|'
+	for i in illegal_chars:
+		s = s.replace(i, '-')
 	return s
 
 def generate_playlist_url(playlist_id:str)->str:

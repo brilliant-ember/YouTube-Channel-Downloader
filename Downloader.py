@@ -27,7 +27,7 @@ from pytube.request import get, head
 from Scrapper import ChannelScrapper
 from Logger import Log
 from Custom_Exceptions import VideoExistsError
-from utils import get_now_date, compare_dicts, get_days_between_dates, over_write_json_file,read_json_file, Keys, remove_slash_from_strings, generate_playlist_url
+from utils import get_now_date, compare_dicts, get_days_between_dates, over_write_json_file,read_json_file, Keys, remove_dir_illegal_chars, generate_playlist_url
 import os
 from sys import stdout, exit
 from signal import signal, SIGINT
@@ -37,7 +37,7 @@ import re
 import time
 
 class Downloader():
-	def __init__(self, channel_url, max_update_lag = 0, browser_wait = 3, headless=False, root_path="youtube_backup"):
+	def __init__(self, channel_url, max_update_lag = 3, browser_wait = 3, headless=False, root_path="youtube_backup"):
 
 		## things needed for first initialization in order
 		self.root_path = root_path
@@ -46,7 +46,7 @@ class Downloader():
 		self.logger = Log(log_file_path) # the logger must follow the init root dir directly
 		self.log = self.logger.log #make an alias to the Log.log() function so I don't have to type it all the time
 		self.scrapper = ChannelScrapper(channel_url, self.logger, headless=headless, default_wait=browser_wait)
-		self.channel_name = remove_slash_from_strings(fr"{self.scrapper.get_channel_name()}")
+		self.channel_name = remove_dir_illegal_chars(fr"{self.scrapper.get_channel_name()}")
 		self.handle_null_channel_name(browser_wait, channel_url)
 		
 		signal(SIGINT, self.graceful_exit)
@@ -83,7 +83,7 @@ class Downloader():
 		if not self.channel_name or self.channel_name =="None":
 			pause_time = browser_wait+5
 			time.sleep(pause_time)
-			self.channel_name = remove_slash_from_strings(fr"{self.scrapper.get_channel_name()}") # try again
+			self.channel_name = remove_dir_illegal_chars(fr"{self.scrapper.get_channel_name()}") # try again
 			if not self.channel_name or self.channel_name =="None":
 				self.log(f"Fatal Error channel name is null for {channel_url} ", 'critical')
 				raise "Critical error not downloading {} because channel name was null, please try again"
@@ -135,7 +135,7 @@ class Downloader():
 		If video exists it will raise VideoExistsError as the file is already there,
 		 because it should have been deleted if there was a partial download,
 		 otherwise will return the path dir of the video'''
-		video_title = remove_slash_from_strings(video_title)
+		video_title = remove_dir_illegal_chars(video_title)
 		video_path = os.path.join(self.channel_path, "videos", video_title)
 		if not os.path.exists(video_path):
 			self.log(f'Created video dir {video_path}')
@@ -158,7 +158,7 @@ class Downloader():
 
 	def write_playlist_info_json(self, playlist_name:str, playlist_info:dict)-> None:
 		'''Writes the playlist information to a json file at the self.=playlists_dir directory'''
-		playlist_name = remove_slash_from_strings(playlist_name)
+		playlist_name = remove_dir_illegal_chars(playlist_name)
 		try:
 			json_file_path = os.path.join(self.playlists_path, f"{playlist_name}.json")
 			if os.path.isfile(json_file_path):
@@ -173,6 +173,7 @@ class Downloader():
 				json_dict[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER] = max(playlist_info[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER],json_dict[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER]  ) # since we are incrementing videos we want the total number of videos we have locally
 				over_write_json_file(json_file_path, json_dict)
 			else:
+				playlist_info[Keys.DATEKEY] = {get_now_date(): "initial install"}
 				over_write_json_file(json_file_path, playlist_info)
 			self.log(f'Wrote the json file for {playlist_name} at {self.playlists_path}')
 
@@ -302,8 +303,6 @@ class Downloader():
 				self.log(f"failed to write failed videos info json object for {over_write_json_file}", level="error")
 				self.handle_exception(e)
 
-
-
 	def write_all_channel_playlists_info(self)-> None:
 		''' writes a json entry for each playlist which included all the videos in that playlist, this doesn't include the All Uploads playlist
 		note below is obsolete, /videos has all videos we need now, no need to extract the special playlist for all-uploads
@@ -328,7 +327,6 @@ class Downloader():
 
 				output = self.scrapper.get_all_uploads_info_for_channel(self.all_uploads_url)
 				output[Keys.PLAYLIST_AVAILABLE_VIDEOS_NUMBER] = len(output.keys())
-				output[Keys.DATEKEY] = {get_now_date(): "initial install"}
 
 				self.write_playlist_info_json(Keys.ALL_UPLOADS_PLAYLIST_NAME , output) 
 				return output

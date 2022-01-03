@@ -38,7 +38,6 @@ class Playlist():
             Keys.PLAYLIST_GROSS_VIDEOS_NUMBER:self.gross_number_of_videos,
             Keys.PLAYLIST_MEMBERS_ONLY_VIDEOS_NUMBER:self.num_members_only_videos,
             Keys.PLAYLIST_MEMBERS_ONLY_VIDEOS:self.members_only_videos,
-            Keys.DATEKEY: get_now_date(),
             Keys.PLAYLIST_AVAILABLE_VIDEOS: self.available_videos
         }
 
