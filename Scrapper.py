@@ -303,7 +303,7 @@ class ChannelScrapper():
 			if playlist_id in request.url and response and response.body:
 				return self._decode_response_body(response)
 				
-		raise Exception("Didn't find the requested url")
+		raise Exception(f"Didn't find the requested url {request_url}")
 
 	def get_playlist_info(self, playlist_url) -> dict:
 		'''takes playlist url, returns the number of videos in that playlist and an object {"video1Title": "video1url", video2:url ... and so on}
