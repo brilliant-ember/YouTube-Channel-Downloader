@@ -27,7 +27,7 @@ from pytube.request import get, head
 from Scrapper import ChannelScrapper
 from Logger import Log
 from Custom_Exceptions import VideoExistsError
-from utils import get_now_date, compare_dicts, get_days_between_dates, over_write_json_file,read_json_file, Keys, remove_dir_illegal_chars, generate_playlist_url
+from utils import get_now_date, compare_dicts, get_days_between_dates, over_write_json_file,read_json_file, Keys, remove_dir_illegal_chars, generate_playlist_url, Quality
 import os
 from sys import stdout, exit
 from signal import signal, SIGINT
@@ -37,7 +37,7 @@ import re
 import time
 
 class Downloader():
-	def __init__(self, channel_url, max_update_lag = 3, browser_wait = 3, headless=False, root_path="youtube_backup"):
+	def __init__(self, channel_url, max_update_lag = 3, browser_wait = 3, headless=False, root_path="youtube_backup", quality=Quality.HIGH):
 
 		## things needed for first initialization in order
 		self.root_path = root_path
@@ -76,6 +76,7 @@ class Downloader():
 		self.max_update_lag = max_update_lag # scrape the channel if the current json record is more than x days old, put zero to scrape the channel once regardless of the freshness of the record
 		self.num_created_video_dirs = 0
 		self.all_playlists = {}
+		self.quality = quality
 		
 		self.log(f'Bismillah! initialized a Download for channel {self.channel_name} at {self.channel_path}', print_log=True)
 		
@@ -230,7 +231,10 @@ class Downloader():
 			
 			if (progressive):
 				# self.log(f"Attempt to download {title} with url {video_url}")
-				yt.streams.get_highest_resolution().download(output_path=self.current_video_output_path)
+				if self.quality == Quality.HIGH:
+					yt.streams.get_highest_resolution().download(output_path=self.current_video_output_path)
+				else:
+					yt.streams.get_lowest_resolution().download(output_path=self.current_video_output_path)
 		except VideoExistsError as ve:
 			msg = f'''Video \"{self.current_video_information['title']}\" already exists, not downloading url {self.current_video_information['video_url']}'''
 			self.log(msg, level="warning")
@@ -255,6 +259,29 @@ class Downloader():
 				break
 		return True
 
+	def download_specific_playlist(self, playlist_url:str):
+		'''This function is a simplified version of download_all_videos_from_channel
+		it scrapes and downloads a single playlist, it is only usable when there's a single playlist or a few
+		that you want to download, if  you want to back up the entire channel please use download_all_videos_from_channel'''
+
+		self.log(f"Attempting to download playlist {playlist_url}")
+		# self.write_channel_info()
+		playlist_info = self.scrapper.get_playlist_info(playlist_url)
+		video_urls = []
+		for v in playlist_info[Keys.PLAYLIST_AVAILABLE_VIDEOS].values():
+			video_urls.append(v[Keys.URL])
+		self.write_playlist_info_json(playlist_info[Keys.PLAYLIST_NAME], playlist_info)
+		if self.download_url_list(video_urls):
+			self.__finish_download_and_show_stats()
+		else:
+			self.log("There was an error, download the playlist", level="error")
+
+	def download_specific_video(self, video_url:str):
+		'''this is simplified function for backing up a single video, don't use programmatically'''
+		self.log(f"Attempting to download video {video_url}")
+		# self.write_channel_info()
+		self.download_video(video_url)
+
 	def download_all_videos_from_channel(self)-> None:
 		self.log("Attempting to download All Uploads playlist")
 		all_videos_info = self.get_all_uploads_playlist_data()
@@ -269,11 +296,11 @@ class Downloader():
 			self.log("God bless you!")
 		else:
 			self.log(f"There was a problem and I couldn't download all the videos... total downloads should be {num_vids} for {self.all_uploads_url}")
-		self.finish_download_and_show_stats()
+		self.__finish_download_and_show_stats()
 
-	def finish_download_and_show_stats(self):
+	def __finish_download_and_show_stats(self):
 		corrupted_downloads = self.validate_downloaded_videos() # this should be zero
-		self.log(f"Created a total of {self.num_created_video_dirs} new video directories for {self.channel_name}")
+		self.log(f"There is a total of {self.num_created_video_dirs} new video directories for {self.channel_name}")
 		if len(corrupted_downloads) != 0:
 			self.log(f"There are {len(corrupted_downloads)} corrupted downloads that should be deleted and repeated, please run the downloader again. here is a list: ", "error")
 			self.log(str(corrupted_downloads))
@@ -282,10 +309,10 @@ class Downloader():
 		num_failed_downloads = len(self.failed_videos.keys())
 		if num_failed_downloads > 0:
 			self.log(f"{num_failed_downloads} videos failed to download, will try again")
-			self.handle_failed_downloads()
+			self.__handle_failed_downloads()
 
 		
-	def handle_failed_downloads(self):
+	def __handle_failed_downloads(self):
 		self.log("Trying to retry failed downloads")
 		list_of_urls = list(self.failed_videos.values())
 		self.failed_videos = {} # reset it to empty
