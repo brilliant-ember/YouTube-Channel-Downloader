@@ -47,6 +47,11 @@ class Keys(str, enum.Enum):
 	VIDEO_NAME = "video_title"
 
 
+class Quality(str, enum.Enum):
+	'''A class to hold video qualities'''
+	HIGH = 'high'
+	LOW = 'low'
+
 ##### functions
 
 def read_json_file(json_file_path:str)->dict:
